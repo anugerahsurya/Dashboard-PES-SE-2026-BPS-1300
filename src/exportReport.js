@@ -1,5 +1,6 @@
 import landscapeUrl from './landscape.svg';
 import { paceTarget } from './Pace.jsx';
+import { deltaLabel, previousDate } from './comparison.js';
 
 const WIDTH = 1920;
 const HEIGHT = 1080;
@@ -42,7 +43,10 @@ function displayValue(row, group, field) {
   return percentage(counts[field], counts.target, group === 'ub' ? 1 : 2);
 }
 
-export async function exportReport(data) {
+export async function exportReport(data, previous, comparisonStatus) {
+  const yesterday = previousDate(data.date);
+  const baseline = comparisonStatus === 'ready' && previous?.date === yesterday ? previous : null;
+  const earlierRows = new Map(baseline?.rows.map(row => [row.code, row]) ?? []);
   const landscape = new Image();
   landscape.src = landscapeUrl;
   await Promise.all([landscape.decode(), document.fonts.load('600 24px ' + font), document.fonts.ready]);
@@ -95,6 +99,15 @@ export async function exportReport(data) {
   text('Progres PES SE2026', MARGIN - 3, 141, 77, ink, 750);
   text('Post Enumeration Survey Sensus Ekonomi 2026', MARGIN, 183, 27, muted, 550);
   text(fullDate.format(dateOf(data.date)) + '   ·   ' + data.time + ' WIB', MARGIN, 228, 25, '#77451f', 700);
+  const baselineDate = fullDate.format(dateOf(yesterday));
+  const statusNotes = {
+    error: 'Pembanding H−1 untuk ' + baselineDate + ' gagal dimuat.',
+    loading: 'Pembanding H−1 untuk ' + baselineDate + ' masih dimuat.'
+  };
+  const note = baseline
+    ? 'Perubahan dalam poin persentase (pp) terhadap ' + baselineDate + ', ' + baseline.time + ' WIB.'
+    : statusNotes[comparisonStatus] || 'Data pembanding H−1 untuk ' + baselineDate + ' belum tersedia.';
+  text(note, MARGIN, 256, 19, muted, 550);
 
   const headerTop = 268;
   const groupHeight = 44;
@@ -121,13 +134,20 @@ export async function exportReport(data) {
       const colWidth = nominal * INNER / nominalWidth;
       const at = field === 'name' ? x + 12 : x + colWidth / 2;
       const align = field === 'name' ? 'left' : 'center';
+      const compare = Boolean(baseline && (group.key === 'nonUb' || group.key === 'ub') && !['officers', 'target'].includes(field));
       text(caption, at, bodyTop - 16, 19.5, group.color, 680, align, colWidth - 10);
       rows.forEach((row, idx) => {
         const total = idx === rows.length - 1;
         const highlighted = field === 'final' || field === 'selesai';
         const size = field === 'name' ? 22 : 21.5;
-        text(displayValue(row, group.key, field), at, bodyTop + (idx + 0.5) * rowHeight + 7.5, size,
+        const centerY = bodyTop + (idx + 0.5) * rowHeight;
+        text(displayValue(row, group.key, field), at, centerY + (compare ? -1 : 7.5), size,
           highlighted ? group.color : ink, total || highlighted ? 750 : field === 'name' ? 620 : 530, align, colWidth - 14);
+        if (compare) {
+          const earlier = total ? baseline.totals : earlierRows.get(row.code);
+          const delta = deltaLabel(row[group.key], earlier?.[group.key], field, group.key);
+          text(delta, at, centerY + 18, 16, muted, 570, align, colWidth - 10);
+        }
       });
       x += colWidth;
     });

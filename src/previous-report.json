@@ -1,0 +1,373 @@
+{
+  "date": "2026-11-13",
+  "time": "12:30",
+  "rows": [
+    {
+      "code": "1303",
+      "name": "Kab. Solok",
+      "deadline": "2026-11-27",
+      "sls": {
+        "belum": 3,
+        "sedang": 24,
+        "selesai": 0,
+        "target": 27
+      },
+      "nonUb": {
+        "open": 2654,
+        "draft": 668,
+        "submitted": 822,
+        "completed": 1102,
+        "rejected": 37,
+        "revoked": 0,
+        "target": 5283,
+        "officers": 21,
+        "pml": 1139,
+        "ppl": 1961,
+        "final": 1102
+      },
+      "ub": {
+        "open": 10,
+        "draft": 13,
+        "submitted": 0,
+        "completed": 0,
+        "rejected": 0,
+        "revoked": 0,
+        "target": 23,
+        "officers": 3,
+        "pml": 0,
+        "ppl": 0,
+        "final": 0
+      }
+    },
+    {
+      "code": "1306",
+      "name": "Kab. Padang Pariaman",
+      "deadline": "2026-11-25",
+      "sls": {
+        "belum": 2,
+        "sedang": 25,
+        "selesai": 2,
+        "target": 29
+      },
+      "nonUb": {
+        "open": 1461,
+        "draft": 637,
+        "submitted": 919,
+        "completed": 1308,
+        "rejected": 29,
+        "revoked": 0,
+        "target": 4354,
+        "officers": 22,
+        "pml": 1337,
+        "ppl": 2256,
+        "final": 1308
+      },
+      "ub": {
+        "open": 10,
+        "draft": 15,
+        "submitted": 1,
+        "completed": 3,
+        "rejected": 0,
+        "revoked": 0,
+        "target": 29,
+        "officers": 4,
+        "pml": 3,
+        "ppl": 4,
+        "final": 3
+      }
+    },
+    {
+      "code": "1307",
+      "name": "Kab. Agam",
+      "deadline": "2026-11-23",
+      "sls": {
+        "belum": 4,
+        "sedang": 24,
+        "selesai": 0,
+        "target": 28
+      },
+      "nonUb": {
+        "open": 2172,
+        "draft": 580,
+        "submitted": 618,
+        "completed": 1266,
+        "rejected": 16,
+        "revoked": 0,
+        "target": 4652,
+        "officers": 21,
+        "pml": 1282,
+        "ppl": 1900,
+        "final": 1266
+      },
+      "ub": {
+        "open": 7,
+        "draft": 19,
+        "submitted": 0,
+        "completed": 2,
+        "rejected": 0,
+        "revoked": 0,
+        "target": 28,
+        "officers": 4,
+        "pml": 2,
+        "ppl": 2,
+        "final": 2
+      }
+    },
+    {
+      "code": "1309",
+      "name": "Kab. Pasaman",
+      "deadline": "2026-11-23",
+      "sls": {
+        "belum": 1,
+        "sedang": 22,
+        "selesai": 0,
+        "target": 23
+      },
+      "nonUb": {
+        "open": 1509,
+        "draft": 319,
+        "submitted": 652,
+        "completed": 1896,
+        "rejected": 92,
+        "revoked": 0,
+        "target": 4468,
+        "officers": 20,
+        "pml": 1988,
+        "ppl": 2640,
+        "final": 1896
+      },
+      "ub": {
+        "open": 13,
+        "draft": 5,
+        "submitted": 0,
+        "completed": 7,
+        "rejected": 1,
+        "revoked": 0,
+        "target": 26,
+        "officers": 4,
+        "pml": 8,
+        "ppl": 8,
+        "final": 7
+      }
+    },
+    {
+      "code": "1312",
+      "name": "Kab. Pasaman Barat",
+      "deadline": "2026-11-25",
+      "sls": {
+        "belum": 7,
+        "sedang": 22,
+        "selesai": 0,
+        "target": 29
+      },
+      "nonUb": {
+        "open": 2112,
+        "draft": 333,
+        "submitted": 428,
+        "completed": 1317,
+        "rejected": 73,
+        "revoked": 0,
+        "target": 4263,
+        "officers": 21,
+        "pml": 1390,
+        "ppl": 1818,
+        "final": 1317
+      },
+      "ub": {
+        "open": 7,
+        "draft": 5,
+        "submitted": 15,
+        "completed": 0,
+        "rejected": 0,
+        "revoked": 0,
+        "target": 27,
+        "officers": 4,
+        "pml": 0,
+        "ppl": 15,
+        "final": 0
+      }
+    },
+    {
+      "code": "1371",
+      "name": "Kota Padang",
+      "deadline": "2026-11-27",
+      "sls": {
+        "belum": 4,
+        "sedang": 24,
+        "selesai": 6,
+        "target": 34
+      },
+      "nonUb": {
+        "open": 1422,
+        "draft": 158,
+        "submitted": 259,
+        "completed": 1700,
+        "rejected": 23,
+        "revoked": 0,
+        "target": 3562,
+        "officers": 13,
+        "pml": 1723,
+        "ppl": 1982,
+        "final": 1700
+      },
+      "ub": {
+        "open": 17,
+        "draft": 7,
+        "submitted": 1,
+        "completed": 17,
+        "rejected": 2,
+        "revoked": 0,
+        "target": 44,
+        "officers": 6,
+        "pml": 19,
+        "ppl": 20,
+        "final": 17
+      }
+    },
+    {
+      "code": "1372",
+      "name": "Kota Solok",
+      "deadline": "2026-11-27",
+      "sls": {
+        "belum": 2,
+        "sedang": 21,
+        "selesai": 0,
+        "target": 23
+      },
+      "nonUb": {
+        "open": 1299,
+        "draft": 483,
+        "submitted": 412,
+        "completed": 1258,
+        "rejected": 27,
+        "revoked": 0,
+        "target": 3479,
+        "officers": 16,
+        "pml": 1285,
+        "ppl": 1697,
+        "final": 1258
+      },
+      "ub": {
+        "open": 2,
+        "draft": 19,
+        "submitted": 3,
+        "completed": 1,
+        "rejected": 0,
+        "revoked": 0,
+        "target": 25,
+        "officers": 4,
+        "pml": 1,
+        "ppl": 4,
+        "final": 1
+      }
+    },
+    {
+      "code": "1375",
+      "name": "Kota Bukittinggi",
+      "deadline": "2026-11-27",
+      "sls": {
+        "belum": 1,
+        "sedang": 25,
+        "selesai": 0,
+        "target": 26
+      },
+      "nonUb": {
+        "open": 1393,
+        "draft": 405,
+        "submitted": 409,
+        "completed": 1419,
+        "rejected": 28,
+        "revoked": 0,
+        "target": 3654,
+        "officers": 16,
+        "pml": 1447,
+        "ppl": 1856,
+        "final": 1419
+      },
+      "ub": {
+        "open": 9,
+        "draft": 9,
+        "submitted": 4,
+        "completed": 0,
+        "rejected": 2,
+        "revoked": 0,
+        "target": 24,
+        "officers": 3,
+        "pml": 2,
+        "ppl": 6,
+        "final": 0
+      }
+    },
+    {
+      "code": "1376",
+      "name": "Kota Payakumbuh",
+      "deadline": "2026-11-25",
+      "sls": {
+        "belum": 4,
+        "sedang": 21,
+        "selesai": 0,
+        "target": 25
+      },
+      "nonUb": {
+        "open": 983,
+        "draft": 366,
+        "submitted": 150,
+        "completed": 1285,
+        "rejected": 18,
+        "revoked": 0,
+        "target": 2802,
+        "officers": 13,
+        "pml": 1303,
+        "ppl": 1453,
+        "final": 1285
+      },
+      "ub": {
+        "open": 7,
+        "draft": 7,
+        "submitted": 3,
+        "completed": 6,
+        "rejected": 1,
+        "revoked": 0,
+        "target": 24,
+        "officers": 3,
+        "pml": 7,
+        "ppl": 10,
+        "final": 6
+      }
+    }
+  ],
+  "totals": {
+    "sls": {
+      "belum": 28,
+      "sedang": 208,
+      "selesai": 8,
+      "target": 244
+    },
+    "nonUb": {
+      "open": 15005,
+      "draft": 3949,
+      "submitted": 4669,
+      "completed": 12551,
+      "rejected": 343,
+      "revoked": 0,
+      "target": 36517,
+      "officers": 163,
+      "pml": 12894,
+      "ppl": 17563,
+      "final": 12551
+    },
+    "ub": {
+      "open": 82,
+      "draft": 99,
+      "submitted": 27,
+      "completed": 36,
+      "rejected": 6,
+      "revoked": 0,
+      "target": 250,
+      "officers": 35,
+      "pml": 42,
+      "ppl": 69,
+      "final": 36
+    }
+  }
+}

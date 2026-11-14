@@ -83,3 +83,18 @@ button,input,select{font:inherit}
 .bar-strip small{font-size:10px}
 
 .landscape{object-fit:contain;object-position:right bottom}
+.delta{display:inline-flex;align-items:center;vertical-align:middle;border-radius:5px;padding:2px 6px;font-size:11px;font-weight:650;line-height:1.4;letter-spacing:0;font-variant-numeric:tabular-nums;white-space:nowrap}
+.delta.up{background:#e8f3ed;color:#28674e}.delta.down{background:#fbece7;color:#983f30}.delta.neutral{background:#f0f1ec;color:#565d52}
+.metric-value .delta{margin-left:3px}.recap td .delta{margin-top:3px}
+.pes-site .comparison-note{font-size:12px;margin-top:10px}.pes-site .recap-comparison{font-size:12px;margin:0 0 13px}
+.hero-weather{position:absolute;pointer-events:none;bottom:0;right:0;height:100%;width:auto;max-width:63%;aspect-ratio:600/220;overflow:hidden}
+.hero-birds{animation:hero-glide 12s ease-in-out infinite alternate}
+.hero-breeze{animation:hero-wind 9s ease-in-out infinite}
+@keyframes hero-glide{0%{transform:translate(-20px,4px);opacity:0}25%{opacity:.8}100%{transform:translate(11px,-2px);opacity:.7}}
+@keyframes hero-wind{0%{transform:translateX(-13px);opacity:0}40%{opacity:.65}100%{transform:translateX(14px);opacity:0}}
+@media(max-width:680px){.hero-weather{width:54%;max-width:none;height:75%}.metric-value .delta{display:table;margin:4px 0 0}.delta{font-size:10px}}
+@media(prefers-reduced-motion:reduce){.hero-birds,.hero-breeze{animation:none!important}.hero-birds{opacity:.7}.hero-breeze{opacity:0}}
+
+.motion-toggle{position:absolute;top:8px;right:8px;z-index:2;width:32px;height:32px;border:1px solid #d6b995;border-radius:50%;background:#fff7e9dc;color:#71482f;display:grid;place-items:center;cursor:pointer}
+.hero.paused .hero-birds,.hero.paused .hero-breeze{animation-play-state:paused}
+@media(prefers-reduced-motion:reduce){.motion-toggle{display:none}}

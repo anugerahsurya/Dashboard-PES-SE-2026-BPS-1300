@@ -4,8 +4,10 @@ import {createRoot} from 'react-dom/client';
 import {Upload, X, FileSpreadsheet, Check, LoaderCircle, ArrowLeft} from 'lucide-react';
 import Dashboard from './Dashboard.jsx';
 import initial from './initial.json';
+import priorReport from './previous-report.json';
 import {buildSnapshot} from './data.js';
 import {exportReport} from './exportReport.js';
+import {previousDate} from './comparison.js';
 import './app.css';
 
 const endpoint=(import.meta.env.VITE_APPS_SCRIPT_URL||'').trim();
@@ -16,8 +18,10 @@ function check(x){
   if(!x || !/^\d{4}-\d{2}-\d{2}$/.test(x.date) || !/^\d{2}:\d{2}$/.test(x.time) || !Array.isArray(x.rows)||!x.rows.length || ![x.totals,...x.rows].every(r=>['sls','nonUb','ub'].every(k=>Number.isFinite(r?.[k]?.target)))) throw new Error('Format data tersimpan tidak sesuai.');
   return x;
 }
-async function api(body){
-  const response=await fetch(endpoint,body?{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body),signal:AbortSignal.timeout(45000)}:{cache:'no-store',signal:AbortSignal.timeout(20000)});
+async function api(body, date){
+  const url=new URL(endpoint);
+  if(date)url.searchParams.set('date',date);
+  const response=await fetch(url,body?{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body),signal:AbortSignal.timeout(45000)}:{cache:'no-store',signal:AbortSignal.timeout(20000)});
   if(!response.ok)throw new Error('Server tidak dapat diakses. Periksa URL dan akses deployment.');
   const result=await response.json();if(!result.ok)throw new Error(result.error||'Permintaan gagal.');return result.snapshot;
 }
@@ -52,14 +56,62 @@ function UploadDialog({close,apply}){
     <footer>{draft&&<button type="button" disabled={busy} onClick={()=>{setDraft(null);setError('');}}><ArrowLeft size={16}/> Ubah</button>}<button className="primary-import" disabled={busy}>{busy&&<LoaderCircle className="import-spin" size={17}/>} {draft?'Simpan progres':'Periksa data'}</button></footer>
     </form></dialog>
 }
+const historyKey='sumbar.pes.daily.v1';
+function readHistory(){
+  const history=JSON.parse(localStorage.getItem(historyKey)||'{}');
+  const legacy=JSON.parse(localStorage.getItem(cache)||'null');
+  if(legacy && !history[legacy.date])history[legacy.date]=check(legacy);
+  return history;
+}
+function bundled(date){
+  return [initial,priorReport].find(report=>report.date===date) || null;
+}
 function App(){
- const [data,setData]=useState(initial),[open,setOpen]=useState(false),[busy,setBusy]=useState(false),[loading,setLoading]=useState(!!endpoint),[notice,setNotice]=useState('');
- useEffect(()=>{let alive=true;(async()=>{try{
- const stored=endpoint?await api():JSON.parse(localStorage.getItem(cache)||'null');if(stored&&alive)setData(check(stored));
- }catch{if(alive)setNotice('Gagal memuat data tersimpan. Dashboard menampilkan laporan awal 14 November 2026.');}finally{if(alive)setLoading(false);}})();return()=>{alive=false;};},[]);
- async function apply(snapshot,adminKey){if(endpoint){const saved=await api({adminKey,snapshot});setData(check(saved));}else{localStorage.setItem(cache,JSON.stringify(snapshot));setData(snapshot);}setNotice(endpoint?'Progres berhasil disimpan ke Google Sheets.':'Progres tersimpan di browser ini.');}
- async function download(){setBusy(true);try{await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));await exportReport(data);}catch(e){setNotice(e.message);}finally{setBusy(false);}}
- return <><Dashboard data={data} onUpload={()=>setOpen(true)} onExport={download} exporting={busy}/>{loading&&<div className="app-loading" role="status"><LoaderCircle className="import-spin"/> Memuat progres…</div>}
+ const [data,setData]=useState(initial),[open,setOpen]=useState(false),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[notice,setNotice]=useState('');
+ const [comparison,setComparison]=useState({date:null,previous:null,status:'loading'});
+ useEffect(()=>{
+   let alive=true;
+   async function load(){
+     try{
+       const history=endpoint?null:readHistory();
+       const stored=endpoint?await api():history[Object.keys(history).sort().at(-1)];
+       if(stored && alive)setData(check(stored));
+     }catch{if(alive)setNotice('Gagal memuat data tersimpan. Dashboard menampilkan laporan awal 14 November 2026.');}
+     finally{if(alive)setLoading(false);}
+   }
+   load();
+   return()=>{alive=false;};
+ },[]);
+ useEffect(()=>{
+   if(loading)return;
+   let alive=true;
+   const date=previousDate(data.date);
+   async function loadPrevious(){
+     try{
+       const stored=endpoint?await api(undefined,date):readHistory()[date];
+       const previous=stored?check(stored):bundled(date);
+       if(previous && previous.date!==date)throw new Error('Tanggal acuan tidak sesuai.');
+       if(alive)setComparison({date:data.date,previous,status:previous?'ready':'missing'});
+     }catch{if(alive)setComparison({date:data.date,previous:null,status:'error'});}
+   }
+   setComparison({date:data.date,previous:null,status:'loading'});
+   loadPrevious();
+   return()=>{alive=false;};
+ },[data,loading]);
+ async function apply(snapshot,adminKey){
+   if(endpoint){
+     setData(check(await api({adminKey,snapshot})));
+   }else{
+     const history=readHistory();
+     history[snapshot.date]=snapshot;
+     localStorage.setItem(historyKey,JSON.stringify(history));
+     setData(snapshot);
+   }
+   setNotice(endpoint?'Progres berhasil disimpan ke Google Sheets.':'Progres tersimpan di browser ini.');
+ }
+ const current=comparison.date===data.date ? comparison : {previous:null,status:'loading'};
+ async function download(){setBusy(true);try{await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));await exportReport(data,current.previous,current.status);}catch(e){setNotice(e.message);}finally{setBusy(false);}}
+ return <><Dashboard data={data} previous={current.previous} comparisonStatus={current.status} onUpload={()=>setOpen(true)} onExport={download} exporting={busy}/>{loading&&<div className="app-loading" role="status"><LoaderCircle className="import-spin"/> Memuat progres…</div>}
  {notice&&<div className="app-notice" role="status">{notice}<button aria-label="Tutup pemberitahuan" onClick={()=>setNotice('')}><X size={16}/></button></div>}
  {open&&<UploadDialog close={()=>setOpen(false)} apply={apply}/>}</>
 }

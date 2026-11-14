@@ -44,3 +44,9 @@ Kedua ekspor penugasan dapat memakai nama `progress-assignment-…csv`. Pilih be
 Lembar **Snapshot PES** menyimpan satu baris per tanggal laporan. Unggah ulang pada tanggal yang sama memperbarui baris tersebut. Tanggal laporan terbesar menjadi laporan terkini, sehingga koreksi mundur pada tanggal sebelumnya tetap masuk ke riwayat. Untuk membaca rekap tanggal tertentu, buka URL web app dengan parameter seperti `?date=2026-11-14`. Kolom waktu simpan memakai UTC, sedangkan tanggal dan jam dashboard mengikuti input WIB.
 
 Admin dapat merotasi `ADMIN_KEY` melalui Script properties. Untuk menerapkan perubahan kode backend, simpan kode di editor lalu pilih **Deploy → Manage deployments → Edit → New version → Deploy**. [Panduan versi deployment](https://developers.google.com/apps-script/concepts/deployments)
+
+## Perubahan harian
+
+Delta pada KPI, tabel usaha, dan PNG memakai satuan poin persentase (pp). Untuk setiap kode wilayah dan tahap, aplikasi mengurangi persentase hari laporan dengan persentase tanggal kalender sebelumnya. Setiap hari menggunakan targetnya sendiri. Beberapa unggahan pada tanggal yang sama memperbarui laporan hari itu dengan acuan H−1 yang sama.
+
+Aplikasi memakai riwayat Google Sheets, atau riwayat per tanggal di peramban dalam mode lokal. Laporan bawaan 13 November 2026 pukul 12.30 dan 14 November 2026 pukul 13.00 WIB tersedia sebagai acuan awal jika tanggal tersebut belum tersimpan. Jika data H−1 tidak tersedia, dashboard menandainya dan tidak menghitung delta.
