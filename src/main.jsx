@@ -1,3 +1,4 @@
+import '@fontsource-variable/plus-jakarta-sans';
 import React,{useEffect,useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {Upload, X, FileSpreadsheet, Check, LoaderCircle, ArrowLeft} from 'lucide-react';
@@ -63,5 +64,3 @@ function App(){
  {open&&<UploadDialog close={()=>setOpen(false)} apply={apply}/>}</>
 }
 createRoot(document.getElementById('root')).render(<App/>);
-
-

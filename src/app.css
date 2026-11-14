@@ -1,4 +1,4 @@
-.import-dialog,.app-notice,.app-loading{font-family:"Anthropic Sans","Segoe UI",Arial,sans-serif;color:#262920}
+.import-dialog,.app-notice,.app-loading{font-family:"Plus Jakarta Sans Variable","Segoe UI",Arial,sans-serif;color:#262920}
 .import-dialog{border:1px solid #dedbd3;border-radius:20px;padding:28px;width:min(460px,calc(100% - 26px));box-sizing:border-box;max-height:94dvh;box-shadow:0 24px 90px #32241133;background:#fffcf8}
 .import-dialog::backdrop{background:#22231870;backdrop-filter:blur(3px)}.import-dialog header,.import-dialog footer,.import-fields,.file-slot,.import-review>div,.app-notice,.app-loading{display:flex;align-items:center;gap:12px}
 .import-dialog header,.import-review>div{justify-content:space-between}.import-icon{display:grid;place-items:center;background:#fbe5d0;border-radius:12px;width:42px;height:42px;color:#954715}
