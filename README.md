@@ -1,4 +1,4 @@
-# Dashboard progres PES SE2026 Sumatera Barat
+# Dashboard-PES-SE-2026-BPS-1300
 
 Dashboard React untuk Tim IT BPS Provinsi Sumatera Barat. Data awal berasal dari tiga CSV tanggal 14 November 2026. Admin memilih tiga berkas ekspor harian, memeriksa tanggal dan jam laporan (WIB), lalu menyimpan rekap. Gunakan tombol unduh PNG untuk membagikan laporan ke grup.
 
