@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowDownToLine, ArrowUpFromLine, Building2, CalendarDays, ChartColumnIncreasing, ChevronDown, Clock3, Layers3, LoaderCircle, MapPin, Pause, Play, Search, Store } from 'lucide-react';
+import { ArrowDownToLine, ArrowUpFromLine, Building2, CalendarDays, ChevronDown, Clock3, Layers3, LoaderCircle, MapPin, Pause, Play, Search, Store } from 'lucide-react';
 import Pace from './Pace';
 import { deltaLabel, previousDate } from './comparison.js';
 import landscapeUrl from './landscape.svg';
@@ -117,7 +117,7 @@ export default function Dashboard({data,onUpload,onExport,exporting,previous=nul
   const baseline = comparisonStatus==='ready' ? previous : null;
   const note = comparisonNote(data.date,comparisonStatus);
   const finalChange = group => baseline ? deltaLabel(totals[group],baseline.totals[group],'final',group) : '—';
-  return <div className="pes-site"><header className="site-header"><div className="header-inner"><a href="#ringkasan" className="brand" aria-label="PES Monitor, Ringkasan"><div className="brand-symbol" aria-hidden="true"><ChartColumnIncreasing size={25} strokeWidth={2.5}/></div><strong>PES <span>Monitor</span></strong></a><span className="institution">BPS Provinsi Sumatera Barat</span><button type="button" onClick={onUpload} className="btn btn-upload"><ArrowUpFromLine size={16}/>Unggah CSV</button></div></header>
+  return <div className="pes-site"><header className="site-header"><div className="header-inner"><a href="#ringkasan" className="brand" aria-label="PES Monitor, Ringkasan"><img className="brand-symbol" src="/pes-monitor.svg" alt=""/><strong>PES <span>Monitor</span></strong></a><span className="institution">BPS Provinsi Sumatera Barat</span><button type="button" onClick={onUpload} className="btn btn-upload"><ArrowUpFromLine size={16}/>Unggah CSV</button></div></header>
     <main className="pes-main" id="ringkasan">
       <section className={paused ? "hero paused" : "hero"}><img className="landscape" src={landscapeUrl} alt=""/><Weather/><button className="motion-toggle" type="button" onClick={()=>setPaused(!paused)} aria-label={paused?"Putar animasi ilustrasi":"Jeda animasi ilustrasi"}>{paused?<Play size={14}/>:<Pause size={14}/>}</button><div className="hero-copy"><div className="hero-location"><MapPin size={14}/>SUMATERA BARAT</div><h1>Dashboard Progres<br/><span>PES SE2026</span></h1><div className="hero-time"><CalendarDays size={15}/><span>{dateLabel(data.date)}</span><i/><Clock3 size={15}/><span>{data.time.replace(':','.')} WIB</span></div></div></section>
       <div className="summary-heading"><div><h2>Ringkasan progres</h2><p>Capaian pendataan di {integer.format(rows.length)} kabupaten/kota</p></div><button type="button" className="btn btn-export" onClick={onExport} disabled={exporting||comparisonStatus==='loading'}>{exporting?<LoaderCircle aria-hidden="true" className="pes-spin" size={16}/>:<ArrowDownToLine aria-hidden="true" size={16}/>} {exporting?'Menyiapkan PNG…':'Unduh PNG'}</button></div>
@@ -126,7 +126,7 @@ export default function Dashboard({data,onUpload,onExport,exporting,previous=nul
       <div className="chart-grid"><DistrictChart rows={rows}/><Distribution sls={totals.sls}/></div>
       <Pace snapshot={data}/>
       <Recap data={data} previous={baseline} note={note}/>
-    </main><footer className="pes-footer"><span><ChartColumnIncreasing size={17}/> PES Monitor</span><span>Dikelola oleh Tim IT BPS Provinsi Sumatera Barat</span></footer>
+    </main><footer className="pes-footer"><span><img src="/pes-monitor.svg" alt="" width="23" height="23"/> PES Monitor</span><span>Dikelola oleh Tim IT BPS Provinsi Sumatera Barat</span></footer>
   </div>;
 }
 export { Dashboard };

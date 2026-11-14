@@ -49,7 +49,9 @@ export async function exportReport(data, previous, comparisonStatus) {
   const earlierRows = new Map(baseline?.rows.map(row => [row.code, row]) ?? []);
   const landscape = new Image();
   landscape.src = landscapeUrl;
-  await Promise.all([landscape.decode(), document.fonts.load('600 24px ' + font), document.fonts.ready]);
+  const mark = new Image();
+  mark.src = '/pes-monitor.svg';
+  await Promise.all([mark.decode(), landscape.decode(), document.fonts.load('600 24px ' + font), document.fonts.ready]);
   const canvas = document.createElement('canvas');
   const scale = 1.5;
   canvas.width = WIDTH * scale;
@@ -165,7 +167,8 @@ export async function exportReport(data, previous, comparisonStatus) {
     const pml = formatters[2].format(paceTarget(data.date, deadline, 'pml'));
     text('PPL   ' + ppl + '     ·     PML / Final   ' + pml, left + half - 20, benchmarkY + 42, 22, muted, 600, 'right');
   });
-  text('Tim IT BPS Provinsi Sumatera Barat', MARGIN, 1058, 20, muted, 650);
+  ctx.drawImage(mark, MARGIN, 1031, 34, 34);
+  text('Tim IT BPS Provinsi Sumatera Barat', MARGIN + 44, 1058, 20, muted, 650);
   text(data.rows.length + ' kabupaten/kota', WIDTH - MARGIN, 1058, 20, muted, 550, 'right');
 
   const blob = await new Promise((resolve, reject) => canvas.toBlob(

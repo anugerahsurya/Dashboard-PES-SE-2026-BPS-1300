@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Monogram PES Monitor</title>
+  <!-- The stem and open bowl form the P beneath the rising roofline. -->
+  <path fill="#813e20" d="M7 15c5 4 10 6 17 6h12c9 0 15-2 21-7-1 16-11 27-28 28h-5v12l-13 6V26c0-5-1-8-4-11Zm17 14v6h5c7 0 12-2 16-7-4 1-8 1-12 1Z" fill-rule="evenodd"/>
+  <path fill="#f79039" d="M5 5c10 9 17 10 27 10C44 15 52 10 60 2c-2 8-7 14-13 17-5 2-10 3-16 3C19 22 11 17 5 5Z"/>
+</svg>
