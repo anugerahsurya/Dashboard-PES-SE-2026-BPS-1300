@@ -49,7 +49,7 @@ export async function exportReport(data, previous, comparisonStatus) {
   const rows = [...data.rows, { name: 'Sumatera Barat', ...data.totals }];
   const headerTop = 306;
   const groupHeight = 54;
-  const labelHeight = 56;
+  const labelHeight = 140;
   const bodyTop = headerTop + groupHeight + labelHeight;
   const rowHeight = 88;
   const bodyBottom = bodyTop + rows.length * rowHeight;
@@ -137,7 +137,15 @@ export async function exportReport(data, previous, comparisonStatus) {
       const at = field === 'name' ? x + 12 : x + colWidth / 2;
       const align = field === 'name' ? 'left' : 'center';
       const compare = Boolean(baseline && (group.key === 'nonUb' || group.key === 'ub') && !['officers', 'target'].includes(field));
-      text(caption, at, bodyTop - 20, 20, group.color, 680, align, colWidth - 10);
+      const definitions = {
+        ppl: ['all except', 'draft dan', 'open'],
+        pml: ['completed,', 'reject,', 'revoked'],
+        final: ['ONLY', 'COMPLETED'],
+      };
+      const details = ['nonUb','ub'].includes(group.key) ? definitions[field] : null;
+      const headingY = headerTop + groupHeight + (details ? 30 : 79);
+      text(field === 'final' ? 'Olah final' : caption, at, headingY, 20, group.color, 680, align, colWidth - 10);
+      details?.forEach((line,index)=>text(line, at, headingY + 28 + index*24, 17, muted, 500, align, colWidth-10));
       rows.forEach((row, idx) => {
         const total = idx === rows.length - 1;
         const highlighted = field === 'final' || field === 'selesai';

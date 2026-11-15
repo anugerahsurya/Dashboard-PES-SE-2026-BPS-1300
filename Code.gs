@@ -235,7 +235,12 @@ function writeReport_(snapshot) {
     sheet.getRange('AK8').setValue((day-1)/27);
     sheet.getRange('AL8').setValue((day-1)/23);
     SpreadsheetApp.flush();
-    if (!existing) { sheet.setName(name); SpreadsheetApp.flush(); }
+    if (!existing) {
+      sheet.setName(name);
+      book.setActiveSheet(sheet);
+      book.moveActiveSheet(book.getNumSheets());
+      SpreadsheetApp.flush();
+    }
     return name;
   } catch(error) {
     if (!existing && sheet.getName() === pendingName) book.deleteSheet(sheet);
