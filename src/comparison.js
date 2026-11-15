@@ -12,5 +12,5 @@ export function deltaLabel(current, previous, field, groupName) {
   if (!(current?.target > 0 && previous?.target > 0) ||
       !Number.isFinite(current[field]) || !Number.isFinite(previous[field])) return '—';
   const points = 100 * (current[field] / current.target - previous[field] / previous.target);
-  return formats[groupName === 'ub' ? 0 : 1].format(points) + ' pp';
+  return formats[groupName === 'ub' ? 0 : 1].format(points) + '%';
 }

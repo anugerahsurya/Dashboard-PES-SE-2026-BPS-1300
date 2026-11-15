@@ -47,6 +47,15 @@ Admin dapat merotasi `ADMIN_KEY` melalui Script properties. Untuk menerapkan per
 
 ## Perubahan harian
 
-Delta pada KPI, tabel usaha, dan PNG memakai satuan poin persentase (pp). Untuk setiap kode wilayah dan tahap, aplikasi mengurangi persentase hari laporan dengan persentase tanggal kalender sebelumnya. Setiap hari menggunakan targetnya sendiri. Beberapa unggahan pada tanggal yang sama memperbarui laporan hari itu dengan acuan H−1 yang sama.
+Delta pada KPI, tabel usaha, dan PNG menampilkan selisih dua persentase dengan tanda %. Contoh: dari 30% ke 35% ditampilkan sebagai +5%. Untuk setiap kode wilayah dan tahap, aplikasi mengurangi persentase hari laporan dengan persentase tanggal kalender sebelumnya. Setiap hari menggunakan targetnya sendiri. Beberapa unggahan pada tanggal yang sama memperbarui laporan hari itu dengan acuan H−1 yang sama.
 
 Aplikasi memakai riwayat Google Sheets, atau riwayat per tanggal di peramban dalam mode lokal. Laporan bawaan 13 November 2026 pukul 12.30 dan 14 November 2026 pukul 13.00 WIB tersedia sebagai acuan awal jika tanggal tersebut belum tersimpan. Jika data H−1 tidak tersedia, dashboard menandainya dan tidak menghitung delta.
+
+## Membuat tab laporan di Google Sheets
+
+1. Gunakan workbook **All About PES SE2026** yang sudah dikonversi menjadi Google Sheets. Akun yang menjalankan web app perlu akses **Editor** pada spreadsheet tujuan.
+2. Tambahkan Script Property **REPORT_SPREADSHEET_ID** berisi ID spreadsheet laporan. Penyimpanan riwayat tetap menggunakan **SPREADSHEET_ID**. Tanpa properti tujuan, aplikasi hanya menyimpan snapshot. Jika template berganti nama, isi **REPORT_TEMPLATE_SHEET** dengan nama barunya. Nama bawaan adalah **14_11 14.00**.
+3. Pasang versi terbaru **Code.gs** dan perbarui deployment web app. Integrasi memakai layanan bawaan SpreadsheetApp. Untuk menyalin snapshot terakhir yang sudah ada, jalankan fungsi **syncLatestReport** dari editor Apps Script.
+4. Setelah unggahan berhasil, buka tab **PES YYYY-MM-DD HH.mm** pada spreadsheet tujuan. Nama memakai tanggal dan jam laporan WIB. Cek nama wilayah di A, tenggat di C, rekap di G sampai AI, serta tanggal laporan dan acuan progres di AK sampai AL. Kolom AM menyimpan jumlah UB berstatus *revoked*. Selisih zona waktu pengguna tidak mengubah tanggal laporan.
+5. Cek baris provinsi terhadap dashboard. Dengan tiga CSV bawaan, G11 berisi 244, O11 berisi 37.470, Z11 berisi 250, dan AH11 berisi 49. Persentase memakai target masing-masing kategori. Nama petugas wilayah (Innas) dan format berasal dari template. Masalah dan tanda laporan administratif pada B, E, dan F dimulai kosong pada tab baru dan dapat diisi pengelola.
+6. Pengiriman ulang dengan tanggal dan jam sama memperbarui tab yang dibuat aplikasi. Jam berbeda menghasilkan tab tersendiri. Jika nama tab telah dipakai untuk tab manual, ganti nama tab manual sebelum menyimpan. Template tetap dipertahankan. Jika respons gagal setelah tab terbit, kirim ulang data dengan tanggal dan jam yang sama untuk menyelesaikan penyimpanan riwayat.

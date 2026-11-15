@@ -47,7 +47,7 @@ function comparisonNote(date, status) {
   if (status === 'loading') return 'Memuat laporan ' + baseline + '…';
   if (status === 'error') return 'Laporan ' + baseline + ' gagal dimuat. Perubahan belum dapat dihitung.';
   if (status !== 'ready') return 'Belum ada laporan ' + baseline + '. Perubahan belum dapat dihitung.';
-  return 'Perubahan terhadap ' + baseline + ' ditampilkan dalam poin persentase (pp).';
+  return 'Selisih persentase = capaian hari laporan dikurangi capaian ' + baseline + '.';
 }
 
 function Weather() {

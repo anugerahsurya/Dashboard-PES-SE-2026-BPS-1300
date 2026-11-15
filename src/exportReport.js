@@ -3,7 +3,6 @@ import { paceTarget } from './Pace.jsx';
 import { deltaLabel, previousDate } from './comparison.js';
 
 const WIDTH = 1920;
-const HEIGHT = 1080;
 const MARGIN = 48;
 const INNER = WIDTH - 2 * MARGIN;
 const font = '"Plus Jakarta Sans Variable", "Segoe UI", sans-serif';
@@ -47,6 +46,14 @@ export async function exportReport(data, previous, comparisonStatus) {
   const yesterday = previousDate(data.date);
   const baseline = comparisonStatus === 'ready' && previous?.date === yesterday ? previous : null;
   const earlierRows = new Map(baseline?.rows.map(row => [row.code, row]) ?? []);
+  const rows = [...data.rows, { name: 'Sumatera Barat', ...data.totals }];
+  const headerTop = 306;
+  const groupHeight = 54;
+  const labelHeight = 56;
+  const bodyTop = headerTop + groupHeight + labelHeight;
+  const rowHeight = 88;
+  const bodyBottom = bodyTop + rows.length * rowHeight;
+  const height = bodyBottom + 244;
   const landscape = new Image();
   landscape.src = landscapeUrl;
   const mark = new Image();
@@ -55,7 +62,7 @@ export async function exportReport(data, previous, comparisonStatus) {
   const canvas = document.createElement('canvas');
   const scale = 1.5;
   canvas.width = WIDTH * scale;
-  canvas.height = HEIGHT * scale;
+  canvas.height = height * scale;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Peramban gagal menyiapkan gambar laporan.');
   ctx.scale(scale, scale);
@@ -72,7 +79,7 @@ export async function exportReport(data, previous, comparisonStatus) {
     ctx.fillText(String(value), x, y, maxWidth);
   }
 
-  box(0, 0, WIDTH, HEIGHT, page);
+  box(0, 0, WIDTH, height, page);
   const hero = ctx.createLinearGradient(0, 0, WIDTH, 0);
   hero.addColorStop(0, '#fff5e7');
   hero.addColorStop(1, '#ffead2');
@@ -107,17 +114,10 @@ export async function exportReport(data, previous, comparisonStatus) {
     loading: 'Pembanding H−1 untuk ' + baselineDate + ' masih dimuat.'
   };
   const note = baseline
-    ? 'Perubahan dalam poin persentase (pp) terhadap ' + baselineDate + ', ' + baseline.time + ' WIB.'
+    ? 'Angka di bawah progres menunjukkan selisih persentase hari ini dengan laporan ' + baselineDate + ' pukul ' + baseline.time + ' WIB.'
     : statusNotes[comparisonStatus] || 'Data pembanding H−1 untuk ' + baselineDate + ' belum tersedia.';
-  text(note, MARGIN, 256, 19, muted, 550);
+  text(note, MARGIN, 271, 21, muted, 550);
 
-  const headerTop = 268;
-  const groupHeight = 44;
-  const labelHeight = 46;
-  const bodyTop = headerTop + groupHeight + labelHeight;
-  const rows = [...data.rows, { name: 'Sumatera Barat', ...data.totals }];
-  const bodyBottom = 888;
-  const rowHeight = (bodyBottom - bodyTop) / rows.length;
   rows.forEach((row, index) => {
     const y = bodyTop + index * rowHeight;
     const total = index === rows.length - 1;
@@ -131,24 +131,24 @@ export async function exportReport(data, previous, comparisonStatus) {
     const width = group.columns.reduce((sum, col) => sum + col[2] * INNER / nominalWidth, 0);
     box(start, headerTop, width, groupHeight, group.tint);
     box(start, headerTop + groupHeight, width, labelHeight, '#fbfcf8');
-    text(group.label, start + width / 2, headerTop + 29, 22, group.color, 750, 'center', width - 12);
+    text(group.label, start + width / 2, headerTop + 35, 23, group.color, 750, 'center', width - 12);
     group.columns.forEach(([caption, field, nominal]) => {
       const colWidth = nominal * INNER / nominalWidth;
       const at = field === 'name' ? x + 12 : x + colWidth / 2;
       const align = field === 'name' ? 'left' : 'center';
       const compare = Boolean(baseline && (group.key === 'nonUb' || group.key === 'ub') && !['officers', 'target'].includes(field));
-      text(caption, at, bodyTop - 16, 19.5, group.color, 680, align, colWidth - 10);
+      text(caption, at, bodyTop - 20, 20, group.color, 680, align, colWidth - 10);
       rows.forEach((row, idx) => {
         const total = idx === rows.length - 1;
         const highlighted = field === 'final' || field === 'selesai';
-        const size = field === 'name' ? 22 : 21.5;
+        const size = field === 'name' ? 23 : 24;
         const centerY = bodyTop + (idx + 0.5) * rowHeight;
-        text(displayValue(row, group.key, field), at, centerY + (compare ? -1 : 7.5), size,
+        text(displayValue(row, group.key, field), at, centerY + (compare ? -5 : 8), size,
           highlighted ? group.color : ink, total || highlighted ? 750 : field === 'name' ? 620 : 530, align, colWidth - 14);
         if (compare) {
           const earlier = total ? baseline.totals : earlierRows.get(row.code);
           const delta = deltaLabel(row[group.key], earlier?.[group.key], field, group.key);
-          text(delta, at, centerY + 18, 16, muted, 570, align, colWidth - 10);
+          text(delta, at, centerY + 25, 19, muted, 570, align, colWidth - 10);
         }
       });
       x += colWidth;
@@ -156,20 +156,20 @@ export async function exportReport(data, previous, comparisonStatus) {
     if (start > MARGIN) box(start, headerTop, 1.5, bodyBottom - headerTop, '#d5d8cd');
   });
 
-  text('Target progres harian', MARGIN, 932, 28, ink, 730);
-  const benchmarkY = 950;
+  text('Target progres harian', MARGIN, bodyBottom + 58, 29, ink, 730);
+  const benchmarkY = bodyBottom + 82;
   const half = (INNER - 20) / 2;
   ['2026-11-23', '2026-11-27'].forEach((deadline, index) => {
     const left = MARGIN + index * (half + 20);
-    box(left, benchmarkY, half, 66, '#efeee5', 12);
-    text('Tenggat ' + shortDate.format(dateOf(deadline)), left + 20, benchmarkY + 42, 23, ink, 720);
+    box(left, benchmarkY, half, 76, '#efeee5', 12);
+    text('Tenggat ' + shortDate.format(dateOf(deadline)), left + 20, benchmarkY + 46, 23, ink, 720);
     const ppl = formatters[2].format(paceTarget(data.date, deadline, 'ppl'));
     const pml = formatters[2].format(paceTarget(data.date, deadline, 'pml'));
-    text('PPL   ' + ppl + '     ·     PML / Final   ' + pml, left + half - 20, benchmarkY + 42, 22, muted, 600, 'right');
+    text('PPL   ' + ppl + '     ·     PML / Final   ' + pml, left + half - 20, benchmarkY + 46, 22, muted, 600, 'right');
   });
-  ctx.drawImage(mark, MARGIN, 1031, 34, 34);
-  text('Tim IT BPS Provinsi Sumatera Barat', MARGIN + 44, 1058, 20, muted, 650);
-  text(data.rows.length + ' kabupaten/kota', WIDTH - MARGIN, 1058, 20, muted, 550, 'right');
+  ctx.drawImage(mark, MARGIN, height - 60, 34, 34);
+  text('Tim IT BPS Provinsi Sumatera Barat', MARGIN + 44, height - 34, 20, muted, 650);
+  text(data.rows.length + ' kabupaten/kota', WIDTH - MARGIN, height - 34, 20, muted, 550, 'right');
 
   const blob = await new Promise((resolve, reject) => canvas.toBlob(
     image => image ? resolve(image) : reject(new Error('Gagal membuat PNG.')), 'image/png'

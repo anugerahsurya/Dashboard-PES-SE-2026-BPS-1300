@@ -122,12 +122,142 @@ function doPost(e) {
     const index = dates_(sheet).indexOf(snapshot.date);
     const row = index < 0 ? sheet.getLastRow() + 1 : index + 2;
     if (row > sheet.getMaxRows()) sheet.insertRowsAfter(sheet.getMaxRows(), 1);
+    let reportSheetName;
+    try {
+      reportSheetName = writeReport_(snapshot);
+    } catch (error) {
+      console.error(error.message);
+      return json_({ok:false,error:'Tab laporan gagal disiapkan. Periksa akses edit, struktur template, dan nama tab pada spreadsheet laporan. Snapshot belum diterbitkan.'});
+    }
     sheet.getRange(row, 1, 1, 3).setNumberFormat('@').setValues([[snapshot.date, new Date().toISOString(), payload]]);
     SpreadsheetApp.flush();
-    return json_({ok: true, snapshot: snapshot});
+    return json_({ok: true, snapshot: snapshot, reportSheetName: reportSheetName || undefined});
   } catch (error) {
     console.error(error.message);
     return json_({ok: false, error: 'Snapshot gagal disimpan. Periksa konfigurasi Apps Script.'});
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+const REPORT_MARK = 'PES_SE2026_REPORT_V1';
+const REPORT_NAMES = {
+  'kab solok': '1303', 'kab padang pariaman': '1306', 'kab pdg pariaman': '1306',
+  'kab agam': '1307', 'kab pasaman': '1309', 'kab pasaman barat': '1312',
+  'kota padang': '1371', 'kota solok': '1372', 'kota bukittinggi': '1375', 'kota payakumbuh': '1376'
+};
+
+function reportConfig_() {
+  const p = PropertiesService.getScriptProperties();
+  return {
+    id: p.getProperty('REPORT_SPREADSHEET_ID'),
+    template: p.getProperty('REPORT_TEMPLATE_SHEET') || '14_11 14.00'
+  };
+}
+
+function normalized_(value) {
+  return String(value).toLowerCase().replace(/\./g, '').replace(/^kabupaten\s+/, 'kab ').replace(/\s+/g, ' ').trim();
+}
+
+function reportOrder_(template) {
+  const rows = template.getRange('A1:AM11').getDisplayValues();
+  // Index kolom nol. Uji titik batas agar sisipan/pergeseran kolom terdeteksi.
+  const anchors = {0:'satker',6:'target sls',7:'jumlah ppl non ub',10:'jumlah sls selesai',
+    15:'open',16:'draft',17:'submitted by pencacah',18:'completed by pengawas',
+    19:'rejected by pengawas',20:'revoked',21:'draft',25:'target ub',26:'jumlah ppl ub',
+    30:'open',31:'draft',32:'submitted by pencacah',33:'completed by pengawas',34:'rejected',
+    36:'target 27 nov',37:'target 23 nov'};
+  if (!Object.keys(anchors).every(col => normalized_(rows[0][col]) === anchors[col]) ||
+      normalized_(rows[10][0]) !== 'provinsi sumbar' || rows.some(r => r[38])) {
+    throw new Error('Struktur template A1:AM11 berbeda dari lembar 14_11 14.00. Periksa template laporan.');
+  }
+  const order = rows.slice(1, 10).map(row => REPORT_NAMES[normalized_(row[0])]);
+  if (order.some(code => !code) || new Set(order).size !== 9) throw new Error('Nama wilayah template laporan tidak sesuai.');
+  return order;
+}
+
+function reportNumbers_(row) {
+  const s = row.sls, n = row.nonUb, u = row.ub;
+  const pct = (count, target) => target ? count / target : '';
+  return [s.target, n.officers, s.belum, s.sedang, s.selesai,
+    pct(s.belum,s.target), pct(s.sedang,s.target), pct(s.selesai,s.target),
+    n.target, n.open, n.draft, n.submitted, n.completed, n.rejected, n.revoked,
+    pct(n.draft,n.target), pct(n.ppl,n.target), pct(n.pml,n.target), pct(n.final,n.target),
+    u.target, u.officers, pct(u.ppl,u.target), pct(u.pml,u.target), pct(u.final,u.target),
+    u.open, u.draft, u.submitted, u.completed, u.rejected];
+}
+
+// Nomor seri tanggal Google Sheets menghindari pergeseran zona waktu akun.
+function dateSerial_(day) {
+  return (Date.parse(day + 'T00:00:00Z') - Date.UTC(1899,11,30)) / 86400000;
+}
+
+function writeReport_(snapshot) {
+  const config = reportConfig_();
+  if (!config.id) return null;
+  const book = SpreadsheetApp.openById(config.id);
+  const template = book.getSheetByName(config.template);
+  if (!template) throw new Error('Template laporan tidak ditemukan.');
+  const name = 'PES ' + snapshot.date + ' ' + snapshot.time.replace(':','.');
+  if (template.getName() === name) throw new Error('Nama tab laporan sama dengan template.');
+  const order = reportOrder_(template);
+  const byCode = new Map(snapshot.rows.map(r => [r.code,r]));
+  const rows = order.map(code => byCode.get(code));
+  const existing = book.getSheetByName(name);
+  const pendingName = '__PES_' + Utilities.getUuid();
+  const sheet = existing || book.insertSheet(pendingName, {template: template});
+  const marker = sheet.getSheetId() + '|' + name;
+  try {
+    if (existing) {
+      if (!sheet.getDeveloperMetadata().some(m => m.getKey() === REPORT_MARK && m.getValue() === marker)) {
+        throw new Error('Nama tab telah digunakan oleh lembar lain. Periksa tab laporan.');
+      }
+      const current = sheet.getRange('A2:A10').getDisplayValues().map(r => REPORT_NAMES[normalized_(r[0])]);
+      if (current.some((code,i) => code !== order[i])) throw new Error('Urutan wilayah tab laporan telah berubah.');
+    } else {
+      sheet.addDeveloperMetadata(REPORT_MARK, marker);
+      // Masalah dan tanda laporan administrasi berasal dari hari template, bukan CSV.
+      sheet.getRange('B2:B10').clearContent();
+      sheet.getRange('E2:F10').clearContent();
+      sheet.getRange('AM1').setValue('REVOKED BY Pengawas (UB)');
+    }
+    const all = rows.concat(snapshot.totals);
+    sheet.getRange('C2:C10').setValues(rows.map(r => [dateSerial_(r.deadline)]));
+    sheet.getRange('G2:AI11').setValues(all.map(reportNumbers_));
+    sheet.getRange('AM2:AM11').setValues(all.map(r => [r.ub.revoked]));
+    const today = dateSerial_(snapshot.date);
+    const day = today - dateSerial_('2026-11-01') + 1;
+    const targets = [27,23];
+    const deadline = targets.map(d => dateSerial_('2026-11-' + d));
+    sheet.getRange('AK2:AL7').setValues([deadline, [today,today], deadline.map(d => d-today),
+      [day,day], targets.map(d => 1/d), targets.map(d => day/d)]);
+    // AK8:AK9 dan AL8:AL9 adalah dua area gabungan pada template.
+    sheet.getRange('AK8').setValue((day-1)/27);
+    sheet.getRange('AL8').setValue((day-1)/23);
+    SpreadsheetApp.flush();
+    if (!existing) { sheet.setName(name); SpreadsheetApp.flush(); }
+    return name;
+  } catch(error) {
+    if (!existing && sheet.getName() === pendingName) book.deleteSheet(sheet);
+    throw error;
+  }
+}
+
+// Sinkronisasi dari editor setelah memasang integrasi atau mengganti tujuan.
+function syncLatestReport() {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    const sheet = verifySheet_(openBook_().getSheetByName(SHEET_NAME));
+    const dates = dates_(sheet);
+    const latest = dates.reduce((a,b) => a > b ? a : b, '');
+    if (!latest) throw new Error('Belum ada snapshot tersimpan.');
+    const snapshot = JSON.parse(sheet.getRange(dates.indexOf(latest)+2,3).getValue());
+    if (!validSnapshot_(snapshot)) throw new Error('Snapshot terbaru tidak valid.');
+    const name = writeReport_(snapshot);
+    if (!name) throw new Error('Isi Script Property REPORT_SPREADSHEET_ID.');
+    console.log('Tab laporan tersinkron: ' + name);
+    return name;
   } finally {
     lock.releaseLock();
   }
