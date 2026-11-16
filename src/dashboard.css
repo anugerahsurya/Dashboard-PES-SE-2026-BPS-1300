@@ -104,3 +104,15 @@ button,input,select{font:inherit}
 .deadline-23{background:#f1e9fc;color:#6c4093}.deadline-27{background:#e4f2f7;color:#24627b}.deadline-25{background:#fff0d6;color:#805a19}
 .recap td.achieved{background:#eaf4ed;color:#245c3e}.recap td.behind{background:#fbece8;color:#8a392d}
 .recap .achievement-label{display:block;font-size:10px;color:inherit;margin-top:5px}
+.is-ready .bar-fill{transform-origin:left;animation:chart-fill 950ms var(--ease-out) both}
+.is-ready .bar-strip.ub .bar-fill{animation-delay:100ms}
+.is-ready .donut svg{animation:donut-reveal 1.1s var(--ease-out) both}
+@keyframes chart-fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes donut-reveal{from{opacity:0;transform:rotate(-45deg) scale(.88)}to{opacity:1;transform:rotate(0) scale(1)}}
+.hero-weather{z-index:1}
+.hero-birds{animation:hero-flight 9s linear infinite;opacity:.85}
+.hero-breeze{animation:hero-wind 6s ease-in-out infinite}
+@keyframes hero-flight{0%{transform:translate(-70px,12px)}50%{transform:translate(10px,-3px)}100%{transform:translate(100px,7px)}}
+@keyframes hero-wind{0%{transform:translateX(-25px);opacity:0}30%,65%{opacity:.75}100%{transform:translateX(90px);opacity:0}}
+.is-loading .hero-birds,.is-loading .hero-breeze{animation-play-state:paused}
+@media(prefers-reduced-motion:reduce){.is-ready .bar-fill,.is-ready .donut svg,.hero-birds,.hero-breeze{animation:none!important}}

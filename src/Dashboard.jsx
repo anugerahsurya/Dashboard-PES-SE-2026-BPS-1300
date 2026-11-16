@@ -53,7 +53,7 @@ function comparisonNote(date, status) {
 
 function Weather() {
   return <svg className="hero-weather" viewBox="0 0 600 220" preserveAspectRatio="xMaxYMax meet" aria-hidden="true" fill="none" stroke="#9a663f" strokeLinecap="round">
-    <g className="hero-birds" strokeWidth="1.4"><path d="M298 61q6-3 9 1q5-4 10-2m13-12q5-2 7 1q4-3 8-2"/></g>
+    <g className="hero-birds" strokeWidth="2.2"><path d="M298 61q6-3 9 1q5-4 10-2m13-12q5-2 7 1q4-3 8-2"/></g>
     <g className="hero-breeze" strokeWidth="1"><path d="M152 97h17q6 0 9-3m-18 8h10"/></g>
   </svg>;
 }
@@ -98,7 +98,7 @@ function Recap({data,previous,note}) {
   const labels={sls:'SLS',nonUb:'Non UB',ub:'UB'};
   const rows=data.rows.filter(r=>(r.name+' '+r.code).toLocaleLowerCase('id').includes(query.trim().toLocaleLowerCase('id')));
   const columns=tab==='sls' ? [['target','Target'],['belum','Belum'],['sedang','Sedang'],['selesai','Selesai']] :
-    [['target','Target'],['officers','Petugas PPL'],...(tab==='nonUb'?[['draft','Draf']]:[]),['ppl','Progres PPL'],['pml','Progres PML'],['gap','Gap PPL-PML'],['final','Olah final']];
+    [['target','Target'],['officers','Petugas PPL'],...(tab==='nonUb'?[['draft','Draf']]:[]),['ppl','Progres PPL'],['pml','Progres PML'],['gap','Gap Progres PPL-PML'],['final','Olah final']];
   const byCode = new Map(previous?.rows.map(row=>[row.code,row]));
   const renderCells = (group, baseline, members) => columns.map(([key])=>{
     const progress = tab !== 'sls' && !['target','officers'].includes(key);
@@ -119,19 +119,19 @@ function Recap({data,previous,note}) {
   </section>;
 }
 
-export default function Dashboard({data,onUpload,onExport,exporting,previous=null,comparisonStatus='missing'}) {
+export default function Dashboard({data,onUpload,onExport,exporting,previous=null,comparisonStatus='missing',ready=true}) {
   const [paused,setPaused]=useState(false);
   const {totals,rows}=data;
   const baseline = comparisonStatus==='ready' ? previous : null;
   const note = comparisonNote(data.date,comparisonStatus);
   const finalChange = group => baseline ? deltaLabel(totals[group],baseline.totals[group],'final',group) : '—';
-  return <div className="pes-site"><header className="site-header"><div className="header-inner"><a href="#ringkasan" className="brand" aria-label="PES Monitor, Ringkasan"><img className="brand-symbol" src="/pes-monitor.svg" alt=""/><strong>PES <span>Monitor</span></strong></a><span className="institution">BPS Provinsi Sumatera Barat</span><button type="button" onClick={onUpload} className="btn btn-upload"><ArrowUpFromLine size={16}/>Unggah CSV</button></div></header>
+  return <div className={ready?"pes-site is-ready":"pes-site is-loading"}><header className="site-header"><div className="header-inner"><a href="#ringkasan" className="brand" aria-label="PES Monitor, Ringkasan"><img className="brand-symbol" src="/pes-monitor.svg" alt=""/><strong>PES <span>Monitor</span></strong></a><span className="institution">BPS Provinsi Sumatera Barat</span><button type="button" onClick={onUpload} className="btn btn-upload"><ArrowUpFromLine size={16}/>Unggah CSV</button></div></header>
     <main className="pes-main" id="ringkasan">
       <section className={paused ? "hero paused" : "hero"}><img className="landscape" src={landscapeUrl} alt=""/><Weather/><button className="motion-toggle" type="button" onClick={()=>setPaused(!paused)} aria-label={paused?"Putar animasi ilustrasi":"Jeda animasi ilustrasi"}>{paused?<Play size={14}/>:<Pause size={14}/>}</button><div className="hero-copy"><div className="hero-location"><MapPin size={14}/>SUMATERA BARAT</div><h1>Dashboard Progres<br/><span>PES SE2026</span></h1><div className="hero-time"><CalendarDays size={15}/><span>{dateLabel(data.date)}</span><i/><Clock3 size={15}/><span>{data.time.replace(':','.')} WIB</span></div></div></section>
       <div className="summary-heading"><div><h2>Ringkasan progres</h2><p>Capaian pendataan di {integer.format(rows.length)} kabupaten/kota</p></div><button type="button" className="btn btn-export" onClick={onExport} disabled={exporting||comparisonStatus==='loading'}>{exporting?<LoaderCircle aria-hidden="true" className="pes-spin" size={16}/>:<ArrowDownToLine aria-hidden="true" size={16}/>} {exporting?'Menyiapkan PNG…':'Unduh PNG'}</button></div>
       <div className="metric-grid"><Metric icon={Layers3} title="Pendataan SLS" description="SLS selesai" complete={totals.sls.selesai} target={totals.sls.target} tone="orange"/><Metric icon={Store} title="Usaha Non UB" description="Selesai olah final" complete={totals.nonUb.final} target={totals.nonUb.target} tone="teal" group="nonUb" delta={finalChange('nonUb')}/><Metric icon={Building2} title="Usaha Besar (UB)" description="Selesai olah final" complete={totals.ub.final} target={totals.ub.target} tone="violet" group="ub" delta={finalChange('ub')}/></div>
       <p className="comparison-note" role="status">{note}</p>
-      <div className="chart-grid"><DistrictChart rows={rows}/><Distribution sls={totals.sls}/></div>
+      <div className="chart-grid" key={ready?"charts-ready":"charts-loading"}><DistrictChart rows={rows}/><Distribution sls={totals.sls}/></div>
       <Pace snapshot={data}/>
       <Recap data={data} previous={baseline} note={note}/>
     </main><footer className="pes-footer"><span><img src="/pes-monitor.svg" alt="" width="23" height="23"/> PES Monitor</span><span>Dikelola oleh Tim IT BPS Provinsi Sumatera Barat</span></footer>

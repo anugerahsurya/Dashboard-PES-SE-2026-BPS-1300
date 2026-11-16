@@ -28,10 +28,10 @@ const groups = [
     ['Target', 'target', 76], ['Belum', 'belum', 75], ['Sedang', 'sedang', 78], ['Selesai', 'selesai', 79]
   ] },
   { key: 'nonUb', label: 'PES SE2026 · Non-UB', tint: '#fae3cb', color: '#814219', columns: [
-    ['Target', 'target', 100], ['Petugas', 'officers', 91], ['Draf', 'draft', 108], ['PPL', 'ppl', 110], ['PML', 'pml', 110], ['Gap', 'gap', 100], ['Final', 'final', 110]
+    ['Target', 'target', 100], ['Petugas', 'officers', 91], ['Draf', 'draft', 108], ['PPL', 'ppl', 110], ['PML', 'pml', 110], ['Gap Progres', 'gap', 100], ['Final', 'final', 110]
   ] },
   { key: 'ub', label: 'PES SE2026 · UB', tint: '#e2eaf3', color: '#415a7a', columns: [
-    ['Target', 'target', 82], ['Petugas', 'officers', 90], ['PPL', 'ppl', 97], ['PML', 'pml', 97], ['Gap', 'gap', 95], ['Final', 'final', 98]
+    ['Target', 'target', 82], ['Petugas', 'officers', 90], ['PPL', 'ppl', 97], ['PML', 'pml', 97], ['Gap Progres', 'gap', 95], ['Final', 'final', 98]
   ] }
 ];
 

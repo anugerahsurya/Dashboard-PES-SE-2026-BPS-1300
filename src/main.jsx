@@ -121,7 +121,7 @@ function App(){
  useEffect(()=>{
    if(!loading && assetsReady && current.status!=='loading')document.getElementById('startup-loading')?.remove();
  },[loading,assetsReady,current.status]);
- return <><Dashboard data={data} previous={current.previous} comparisonStatus={current.status} onUpload={()=>setOpen(true)} onExport={download} exporting={busy}/>{(loading||!assetsReady||current.status==='loading')&&<div className="app-loading" role="status"><LoaderCircle className="import-spin"/> Memuat progres</div>}
+ return <><Dashboard ready={!loading&&assetsReady&&current.status!=='loading'} data={data} previous={current.previous} comparisonStatus={current.status} onUpload={()=>setOpen(true)} onExport={download} exporting={busy}/>{(loading||!assetsReady||current.status==='loading')&&<div className="app-loading" role="status"><LoaderCircle className="import-spin"/> Memuat progres</div>}
  {notice&&<div className="app-notice" role="status">{notice}<button aria-label="Tutup pemberitahuan" onClick={()=>setNotice('')}><X size={16}/></button></div>}
  {open&&<UploadDialog close={()=>setOpen(false)} apply={apply}/>}</>
 }
