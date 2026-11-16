@@ -1,8 +1,9 @@
+import {achievement,progressValue} from './progress.js';
 import landscapeUrl from './landscape.svg';
 import { paceTarget } from './Pace.jsx';
 import { deltaLabel, previousDate } from './comparison.js';
 
-const WIDTH = 1920;
+const WIDTH = 2160;
 const MARGIN = 48;
 const INNER = WIDTH - 2 * MARGIN;
 const font = '"Plus Jakarta Sans Variable", "Segoe UI", sans-serif';
@@ -27,10 +28,10 @@ const groups = [
     ['Target', 'target', 76], ['Belum', 'belum', 75], ['Sedang', 'sedang', 78], ['Selesai', 'selesai', 79]
   ] },
   { key: 'nonUb', label: 'PES SE2026 · Non-UB', tint: '#fae3cb', color: '#814219', columns: [
-    ['Target', 'target', 100], ['Petugas', 'officers', 91], ['Draf', 'draft', 108], ['PPL', 'ppl', 110], ['PML', 'pml', 110], ['Final', 'final', 110]
+    ['Target', 'target', 100], ['Petugas', 'officers', 91], ['Draf', 'draft', 108], ['PPL', 'ppl', 110], ['PML', 'pml', 110], ['Gap', 'gap', 100], ['Final', 'final', 110]
   ] },
   { key: 'ub', label: 'PES SE2026 · UB', tint: '#e2eaf3', color: '#415a7a', columns: [
-    ['Target', 'target', 82], ['Petugas', 'officers', 90], ['PPL', 'ppl', 97], ['PML', 'pml', 97], ['Final', 'final', 98]
+    ['Target', 'target', 82], ['Petugas', 'officers', 90], ['PPL', 'ppl', 97], ['PML', 'pml', 97], ['Gap', 'gap', 95], ['Final', 'final', 98]
   ] }
 ];
 
@@ -39,7 +40,7 @@ function displayValue(row, group, field) {
   if (field === 'deadline') return row.deadline ? shortDate.format(dateOf(row.deadline)) : '—';
   const counts = row[group];
   if (group === 'sls' || field === 'target' || field === 'officers') return integer.format(counts[field]);
-  return percentage(counts[field], counts.target, group === 'ub' ? 1 : 2);
+  return percentage(progressValue(counts,field), counts.target, group === 'ub' ? 1 : 2);
 }
 
 export async function exportReport(data, previous, comparisonStatus) {
@@ -53,7 +54,7 @@ export async function exportReport(data, previous, comparisonStatus) {
   const bodyTop = headerTop + groupHeight + labelHeight;
   const rowHeight = 88;
   const bodyBottom = bodyTop + rows.length * rowHeight;
-  const height = bodyBottom + 244;
+  const height = bodyBottom + 280;
   const landscape = new Image();
   landscape.src = landscapeUrl;
   const mark = new Image();
@@ -136,11 +137,12 @@ export async function exportReport(data, previous, comparisonStatus) {
       const colWidth = nominal * INNER / nominalWidth;
       const at = field === 'name' ? x + 12 : x + colWidth / 2;
       const align = field === 'name' ? 'left' : 'center';
-      const compare = Boolean(baseline && (group.key === 'nonUb' || group.key === 'ub') && !['officers', 'target'].includes(field));
+      const compare = Boolean(baseline && (group.key === 'nonUb' || group.key === 'ub') && !['officers', 'target', 'gap'].includes(field));
       const definitions = {
         ppl: ['all except', 'draft dan', 'open'],
         pml: ['completed,', 'reject,', 'revoked'],
         final: ['ONLY', 'COMPLETED'],
+        gap: ['PPL', 'dikurangi', 'PML'],
       };
       const details = ['nonUb','ub'].includes(group.key) ? definitions[field] : null;
       const headingY = headerTop + groupHeight + (details ? 30 : 79);
@@ -151,8 +153,15 @@ export async function exportReport(data, previous, comparisonStatus) {
         const highlighted = field === 'final' || field === 'selesai';
         const size = field === 'name' ? 23 : 24;
         const centerY = bodyTop + (idx + 0.5) * rowHeight;
+        const members = total ? data.rows : [row];
+        const status = achievement(members,group.key,field,data.date);
+        if(status)box(x+3,bodyTop+idx*rowHeight+3,colWidth-6,rowHeight-6,status.met?'#e3f1e6':'#f9e5df',5);
+        if(field==='deadline' && row.deadline){
+          const colors = row.deadline.endsWith('23') ? ['#eee4f8','#6c4093'] : row.deadline.endsWith('27') ? ['#e1f0f6','#24627b'] : ['#fff0d6','#805a19'];
+          box(x+5,centerY-17,colWidth-10,34,colors[0],5);
+        }
         text(displayValue(row, group.key, field), at, centerY + (compare ? -5 : 8), size,
-          highlighted ? group.color : ink, total || highlighted ? 750 : field === 'name' ? 620 : 530, align, colWidth - 14);
+          status ? (status.met?'#245c3e':'#8a392d') : highlighted ? group.color : ink, total || highlighted ? 750 : field === 'name' ? 620 : 530, align, colWidth - 14);
         if (compare) {
           const earlier = total ? baseline.totals : earlierRows.get(row.code);
           const delta = deltaLabel(row[group.key], earlier?.[group.key], field, group.key);
@@ -164,7 +173,7 @@ export async function exportReport(data, previous, comparisonStatus) {
     if (start > MARGIN) box(start, headerTop, 1.5, bodyBottom - headerTop, '#d5d8cd');
   });
 
-  text('Target progres harian', MARGIN, bodyBottom + 58, 29, ink, 730);
+  text('Target kumulatif hari ini', MARGIN, bodyBottom + 58, 29, ink, 730);
   const benchmarkY = bodyBottom + 82;
   const half = (INNER - 20) / 2;
   ['2026-11-23', '2026-11-27'].forEach((deadline, index) => {
@@ -175,6 +184,7 @@ export async function exportReport(data, previous, comparisonStatus) {
     const pml = formatters[2].format(paceTarget(data.date, deadline, 'pml'));
     text('PPL   ' + ppl + '     ·     PML / Final   ' + pml, left + half - 20, benchmarkY + 46, 22, muted, 600, 'right');
   });
+  text('Hijau: mencapai target kumulatif. Merah: di bawah target. Rekap provinsi memakai target tertimbang wilayah.', MARGIN, bodyBottom+192, 19, muted);
   ctx.drawImage(mark, MARGIN, height - 60, 34, 34);
   text('Tim IT BPS Provinsi Sumatera Barat', MARGIN + 44, height - 34, 20, muted, 650);
   text(data.rows.length + ' kabupaten/kota', WIDTH - MARGIN, height - 34, 20, muted, 550, 'right');

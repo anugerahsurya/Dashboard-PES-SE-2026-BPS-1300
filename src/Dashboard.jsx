@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ArrowDownToLine, ArrowUpFromLine, Building2, CalendarDays, ChevronDown, Clock3, Layers3, LoaderCircle, MapPin, Pause, Play, Search, Store } from 'lucide-react';
 import Pace from './Pace';
+import {achievement,stageNotes,progressValue} from './progress.js';
 import { deltaLabel, previousDate } from './comparison.js';
 import landscapeUrl from './landscape.svg';
 import './dashboard.css';
@@ -97,17 +98,24 @@ function Recap({data,previous,note}) {
   const labels={sls:'SLS',nonUb:'Non UB',ub:'UB'};
   const rows=data.rows.filter(r=>(r.name+' '+r.code).toLocaleLowerCase('id').includes(query.trim().toLocaleLowerCase('id')));
   const columns=tab==='sls' ? [['target','Target'],['belum','Belum'],['sedang','Sedang'],['selesai','Selesai']] :
-    [['target','Target'],['officers','Petugas PPL'],...(tab==='nonUb'?[['draft','Draf']]:[]),['ppl','Progres PPL'],['pml','Progres PML'],['final','Olah final']];
+    [['target','Target'],['officers','Petugas PPL'],...(tab==='nonUb'?[['draft','Draf']]:[]),['ppl','Progres PPL'],['pml','Progres PML'],['gap','Gap PPL-PML'],['final','Olah final']];
   const byCode = new Map(previous?.rows.map(row=>[row.code,row]));
-  const renderCells = (group, baseline) => columns.map(([key])=>{
+  const renderCells = (group, baseline, members) => columns.map(([key])=>{
     const progress = tab !== 'sls' && !['target','officers'].includes(key);
-    return <td key={key}>{progress ? <>{pct(group[key],group.target,tab)}<br/><Delta label={baseline ? deltaLabel(group,baseline,key,tab) : '—'}/></> : integer.format(group[key])}</td>;
+    const status = achievement(members,tab,key,data.date);
+    const targetText = status ? percentage[tab].format(status.target) : '';
+    return <td key={key} className={status ? (status.met?'achieved':'behind') : ''}
+      title={status ? status.label+'; target '+targetText : undefined}>
+      {progress ? <>{pct(progressValue(group,key),group.target,tab)}
+        {key!=='gap' && <><br/><Delta label={baseline ? deltaLabel(group,baseline,key,tab) : '�'}/></>}
+        {status&&<small className="achievement-label">{status.met?'Tercapai':'Di bawah'} - {targetText}</small>}
+      </> : integer.format(group[key])}</td>;
   });
   return <section id="rincian" className="panel recap"><div className="panel-head"><div><h2>Rincian kabupaten/kota</h2><p>{tab==='sls' ? 'Jumlah SLS menurut status pendataan' : 'Persentase progres terhadap target wilayah'}</p></div><label className="search"><Search size={16}/><input type="search" aria-label="Cari wilayah" placeholder="Cari wilayah…" value={query} onChange={e=>setQuery(e.target.value)}/></label></div>
     <div className="tabs" aria-label="Kategori rincian">{Object.keys(labels).map(k=><button key={k} type="button" aria-pressed={tab===k} onClick={()=>setTab(k)}>{labels[k]}</button>)}</div>
-    {tab!=='sls' && <p className="recap-comparison">{note}</p>}
-    <div className="table-scroll" tabIndex={0} role="region" aria-label="Tabel rincian wilayah"><table><thead><tr><th scope="col">Kabupaten/kota</th><th scope="col">Target selesai</th>{columns.map(([key,label])=><th scope="col" key={key}>{label}</th>)}</tr></thead><tbody>{rows.map(r=><tr key={r.code}><th scope="row">{r.name}</th><td>{dateLabel(r.deadline,true)}</td>{renderCells(r[tab],byCode.get(r.code)?.[tab])}</tr>)}
-    {!rows.length && <tr><td colSpan={columns.length+2} className="empty">Wilayah tidak ditemukan.</td></tr>}</tbody><tfoot><tr><th scope="row">Provinsi Sumatera Barat</th><td aria-label="Beragam">—</td>{renderCells(data.totals[tab],previous?.totals[tab])}</tr></tfoot></table></div>
+    {tab!=='sls' && <p className="recap-comparison">{note} Warna capaian mengikuti target kumulatif tenggat wilayah; rekap provinsi memakai target tertimbang.</p>}
+    <div className="table-scroll" tabIndex={0} role="region" aria-label="Tabel rincian wilayah"><table><thead><tr><th scope="col">Kabupaten/kota</th><th scope="col">Target selesai</th>{columns.map(([key,label])=><th scope="col" key={key}>{label}{stageNotes[key]&&<small className="stage-note">{stageNotes[key]}</small>}</th>)}</tr></thead><tbody>{rows.map(r=><tr key={r.code}><th scope="row">{r.name}</th><td><span className={'deadline-badge deadline-'+r.deadline.slice(-2)}>{dateLabel(r.deadline,true)}</span></td>{renderCells(r[tab],byCode.get(r.code)?.[tab],[r])}</tr>)}
+    {!rows.length && <tr><td colSpan={columns.length+2} className="empty">Wilayah tidak ditemukan.</td></tr>}</tbody><tfoot><tr><th scope="row">Provinsi Sumatera Barat</th><td aria-label="Beragam">—</td>{renderCells(data.totals[tab],previous?.totals[tab],data.rows)}</tr></tfoot></table></div>
   </section>;
 }
 
