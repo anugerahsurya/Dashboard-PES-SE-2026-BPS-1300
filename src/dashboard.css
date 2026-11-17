@@ -116,3 +116,9 @@ button,input,select{font:inherit}
 @keyframes hero-wind{0%{transform:translateX(-25px);opacity:0}30%,65%{opacity:.75}100%{transform:translateX(90px);opacity:0}}
 .is-loading .hero-birds,.is-loading .hero-breeze{animation-play-state:paused}
 @media(prefers-reduced-motion:reduce){.is-ready .bar-fill,.is-ready .donut svg,.hero-birds,.hero-breeze{animation:none!important}}
+.sort-heading{display:inline-flex;align-items:center;justify-content:flex-end;gap:7px;width:100%;min-height:36px;padding:0;border:0;background:transparent;color:inherit;text-align:inherit;font:inherit;cursor:pointer}
+.recap th:first-child .sort-heading{justify-content:flex-start}
+.sort-arrow{font-size:14px;opacity:.6;flex-shrink:0}
+.recap th[aria-sort="ascending"] .sort-arrow,.recap th[aria-sort="descending"] .sort-arrow{opacity:1;color:#9a4e20}
+.sort-heading:hover{color:#8c451d}.sort-heading:focus-visible{outline:2px solid #256d70;outline-offset:3px;border-radius:3px}
+@media(max-width:680px){.sort-heading{min-height:44px}}

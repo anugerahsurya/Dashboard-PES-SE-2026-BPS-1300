@@ -95,10 +95,43 @@ function Distribution({sls}) {
 function Recap({data,previous,note}) {
   const [tab,setTab]=useState('sls');
   const [query,setQuery]=useState('');
+  const [sort,setSort]=useState({key:null,dir:null});
   const labels={sls:'SLS',nonUb:'Non UB',ub:'UB'};
-  const rows=data.rows.filter(r=>(r.name+' '+r.code).toLocaleLowerCase('id').includes(query.trim().toLocaleLowerCase('id')));
+  const filteredRows=data.rows.filter(r=>(r.name+' '+r.code).toLocaleLowerCase('id').includes(query.trim().toLocaleLowerCase('id')));
   const columns=tab==='sls' ? [['target','Target'],['belum','Belum'],['sedang','Sedang'],['selesai','Selesai']] :
     [['target','Target'],['officers','Petugas PPL'],...(tab==='nonUb'?[['draft','Draf']]:[]),['ppl','Progres PPL'],['pml','Progres PML'],['gap','Gap Progres PPL-PML'],['final','Olah final']];
+  const validKeys = new Set(['name','deadline',...columns.map(([k])=>k)]);
+  const activeSort = sort.key && validKeys.has(sort.key) ? sort : {key:null,dir:null};
+  const toggleSort = key => {
+    const defaultDir = key === 'name' || key === 'deadline' ? 'asc' : 'desc';
+    setSort(prev => {
+      if (prev.key !== key) return {key, dir: defaultDir};
+      if (prev.dir === defaultDir) return {key, dir: defaultDir === 'asc' ? 'desc' : 'asc'};
+      return {key: null, dir: null};
+    });
+  };
+  const rows = activeSort.key ? [...filteredRows].sort((a,b) => {
+    const dir = activeSort.dir === 'asc' ? 1 : -1;
+    if (activeSort.key === 'name') return dir * a.name.localeCompare(b.name,'id');
+    if (activeSort.key === 'deadline') return dir * a.deadline.localeCompare(b.deadline) || a.name.localeCompare(b.name,'id');
+    const isProgress = tab !== 'sls' && !['target','officers'].includes(activeSort.key);
+    const val = row => {
+      const g = row[tab];
+      if (!isProgress) return g[activeSort.key];
+      return g.target > 0 ? progressValue(g, activeSort.key) / g.target : null;
+    };
+    const va = val(a), vb = val(b);
+    if (va === null && vb === null) return a.name.localeCompare(b.name,'id');
+    if (va === null) return 1;
+    if (vb === null) return -1;
+    return (va - vb) * dir || a.name.localeCompare(b.name,'id');
+  }) : filteredRows;
+  const renderHeading = (key, label, noteText) => {
+    const sorted = activeSort.key === key ? activeSort.dir : null;
+    const ariaSort = sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : 'none';
+    const arrow = sorted === 'asc' ? '\u2191' : sorted === 'desc' ? '\u2193' : '\u2195';
+    return <th scope="col" key={key} aria-sort={ariaSort}><button type="button" className="sort-heading" onClick={()=>toggleSort(key)}><span>{label}</span><span className="sort-arrow" aria-hidden="true">{arrow}</span></button>{noteText&&<small className="stage-note">{noteText}</small>}</th>;
+  };
   const byCode = new Map(previous?.rows.map(row=>[row.code,row]));
   const renderCells = (group, baseline, members) => columns.map(([key])=>{
     const progress = tab !== 'sls' && !['target','officers'].includes(key);
@@ -114,7 +147,7 @@ function Recap({data,previous,note}) {
   return <section id="rincian" className="panel recap"><div className="panel-head"><div><h2>Rincian kabupaten/kota</h2><p>{tab==='sls' ? 'Jumlah SLS menurut status pendataan' : 'Persentase progres terhadap target wilayah'}</p></div><label className="search"><Search size={16}/><input type="search" aria-label="Cari wilayah" placeholder="Cari wilayah…" value={query} onChange={e=>setQuery(e.target.value)}/></label></div>
     <div className="tabs" aria-label="Kategori rincian">{Object.keys(labels).map(k=><button key={k} type="button" aria-pressed={tab===k} onClick={()=>setTab(k)}>{labels[k]}</button>)}</div>
     {tab!=='sls' && <p className="recap-comparison">{note} Warna capaian mengikuti target kumulatif tenggat wilayah; rekap provinsi memakai target tertimbang.</p>}
-    <div className="table-scroll" tabIndex={0} role="region" aria-label="Tabel rincian wilayah"><table><thead><tr><th scope="col">Kabupaten/kota</th><th scope="col">Target selesai</th>{columns.map(([key,label])=><th scope="col" key={key}>{label}{stageNotes[key]&&<small className="stage-note">{stageNotes[key]}</small>}</th>)}</tr></thead><tbody>{rows.map(r=><tr key={r.code}><th scope="row">{r.name}</th><td><span className={'deadline-badge deadline-'+r.deadline.slice(-2)}>{dateLabel(r.deadline,true)}</span></td>{renderCells(r[tab],byCode.get(r.code)?.[tab],[r])}</tr>)}
+    <div className="table-scroll" tabIndex={0} role="region" aria-label="Tabel rincian wilayah"><table><thead><tr>{renderHeading('name','Kabupaten/kota')}{renderHeading('deadline','Target selesai')}{columns.map(([key,label])=>renderHeading(key,label,stageNotes[key]))}</tr></thead><tbody>{rows.map(r=><tr key={r.code}><th scope="row">{r.name}</th><td><span className={'deadline-badge deadline-'+r.deadline.slice(-2)}>{dateLabel(r.deadline,true)}</span></td>{renderCells(r[tab],byCode.get(r.code)?.[tab],[r])}</tr>)}
     {!rows.length && <tr><td colSpan={columns.length+2} className="empty">Wilayah tidak ditemukan.</td></tr>}</tbody><tfoot><tr><th scope="row">Provinsi Sumatera Barat</th><td aria-label="Beragam">—</td>{renderCells(data.totals[tab],previous?.totals[tab],data.rows)}</tr></tfoot></table></div>
   </section>;
 }
