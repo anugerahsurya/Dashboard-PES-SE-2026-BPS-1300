@@ -5,6 +5,7 @@ import {Upload, X, FileSpreadsheet, Check, LoaderCircle, ArrowLeft} from 'lucide
 import Dashboard from './Dashboard.jsx';
 import initial from './initial.json';
 import landscapeUrl from './landscape.svg';
+import nov14 from './report-nov14.json';
 import priorReport from './previous-report.json';
 import {buildSnapshot} from './data.js';
 import {exportReport} from './exportReport.js';
@@ -65,7 +66,7 @@ function readHistory(){
   return history;
 }
 function bundled(date){
-  return [initial,priorReport].find(report=>report.date===date) || null;
+  return [initial,nov14,priorReport].find(report=>report.date===date) || null;
 }
 function App(){
  const [data,setData]=useState(initial),[open,setOpen]=useState(false),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[notice,setNotice]=useState('');
@@ -78,8 +79,14 @@ function App(){
      try{
        const history=endpoint?null:readHistory();
        const stored=endpoint?(await api()).snapshot:history[Object.keys(history).sort().at(-1)];
-       if(stored && alive)setData(check(stored));
-     }catch{if(alive)setNotice('Gagal memuat data tersimpan. Dashboard menampilkan laporan awal 14 November 2026.');}
+       if(stored && alive){
+         const saved=check(stored);
+         if(saved.date+' '+saved.time >= initial.date+' '+initial.time)setData(saved);
+         else setNotice('Menampilkan CSV 19 November 2026, 16.37 WIB. Data ini belum disimpan ke Google Sheets.');
+       }else if(alive){
+         setNotice('Menampilkan CSV 19 November 2026, 16.37 WIB. Data ini belum disimpan ke Google Sheets.');
+       }
+     }catch{if(alive)setNotice('Gagal memuat data tersimpan. Dashboard menampilkan laporan CSV 19 November 2026.');}
      finally{if(alive)setLoading(false);}
    }
    load();

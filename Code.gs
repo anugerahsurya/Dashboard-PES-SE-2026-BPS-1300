@@ -61,10 +61,12 @@ function validGroup_(group, category) {
   const required = category === 'sls' ? statuses.concat('target') :
     statuses.concat('target', 'ppl', 'pml', 'final', 'officers');
   if (!required.every(key => Number.isSafeInteger(group[key]) && group[key] >= 0)) return false;
-  if (group.target !== statuses.reduce((sum, key) => sum + group[key], 0)) return false;
+  const approved = category === 'sls' ? 0 : (group.approved === undefined ? 0 : group.approved);
+  if (!Number.isSafeInteger(approved) || approved < 0) return false;
+  if (group.target !== statuses.reduce((sum, key) => sum + group[key], 0) + approved) return false;
   if (category === 'sls') return true;
-  return group.final === group.completed &&
-    group.pml === group.completed + group.rejected + group.revoked &&
+  return group.final === group.completed + approved &&
+    group.pml === group.completed + approved + group.rejected + group.revoked &&
     group.ppl === group.pml + group.submitted;
 }
 
@@ -80,7 +82,7 @@ function validSnapshot_(s) {
   return categories.every(category => {
     const total = s.totals[category];
     if (!validGroup_(total, category)) return false;
-    return Object.keys(total).every(key => total[key] === s.rows.reduce((sum, row) => sum + row[category][key], 0));
+    return Object.keys(total).every(key => total[key] === s.rows.reduce((sum, row) => sum + (row[category][key] === undefined && key === 'approved' ? 0 : row[category][key]), 0));
   });
 }
 
@@ -225,6 +227,12 @@ function writeReport_(snapshot) {
     sheet.getRange('C2:C10').setValues(rows.map(r => [dateSerial_(r.deadline)]));
     sheet.getRange('G2:AI11').setValues(all.map(reportNumbers_));
     sheet.getRange('AM2:AM11').setValues(all.map(r => [r.ub.revoked]));
+    sheet.getRange('AN1:AO1').setValues([['APPROVED BY Pengawas (Non-UB)', 'APPROVED BY Pengawas (UB)']]);
+    sheet.getRange('AN2:AO11').setValues(all.map(r => [r.nonUb.approved || 0, r.ub.approved || 0]));
+    sheet.getRange('Y1').setValue('Progres Olah final Non UB (COMPLETED + APPROVED)');
+    sheet.getRange('AD1').setValue('Progres Olah final UB (COMPLETED + APPROVED)');
+    sheet.getRange('X1').setValue('Progres PML Non UB (completed, approved, reject, revoked)');
+    sheet.getRange('AC1').setValue('Progres PML UB (completed, approved, reject, revoked)');
     const today = dateSerial_(snapshot.date);
     const day = today - dateSerial_('2026-11-01') + 1;
     const targets = [27,23];

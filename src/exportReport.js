@@ -3,7 +3,7 @@ import landscapeUrl from './landscape.svg';
 import { paceTarget } from './Pace.jsx';
 import { deltaLabel, previousDate } from './comparison.js';
 
-const WIDTH = 2160;
+const WIDTH = 2300;
 const MARGIN = 48;
 const INNER = WIDTH - 2 * MARGIN;
 const font = '"Plus Jakarta Sans Variable", "Segoe UI", sans-serif';
@@ -28,7 +28,7 @@ const groups = [
     ['Target', 'target', 76], ['Belum', 'belum', 75], ['Sedang', 'sedang', 78], ['Selesai', 'selesai', 79]
   ] },
   { key: 'nonUb', label: 'PES SE2026 · Non-UB', tint: '#fae3cb', color: '#814219', columns: [
-    ['Target', 'target', 100], ['Petugas', 'officers', 91], ['Draf', 'draft', 108], ['PPL', 'ppl', 110], ['PML', 'pml', 110], ['Gap Progres', 'gap', 100], ['Final', 'final', 110]
+    ['Target', 'target', 100], ['Petugas', 'officers', 91], ['Draf', 'draft', 108], ['Approved', 'approved', 108], ['PPL', 'ppl', 110], ['PML', 'pml', 110], ['Gap Progres', 'gap', 100], ['Final', 'final', 110]
   ] },
   { key: 'ub', label: 'PES SE2026 · UB', tint: '#e2eaf3', color: '#415a7a', columns: [
     ['Target', 'target', 82], ['Petugas', 'officers', 90], ['PPL', 'ppl', 97], ['PML', 'pml', 97], ['Gap Progres', 'gap', 95], ['Final', 'final', 98]
@@ -140,8 +140,9 @@ export async function exportReport(data, previous, comparisonStatus) {
       const compare = Boolean(baseline && (group.key === 'nonUb' || group.key === 'ub') && !['officers', 'target', 'gap'].includes(field));
       const definitions = {
         ppl: ['all except', 'draft dan', 'open'],
-        pml: ['completed,', 'reject,', 'revoked'],
-        final: ['ONLY', 'COMPLETED'],
+        pml: ['completed,', 'approved,', 'reject, revoked'],
+        final: ['COMPLETED', '+ APPROVED'],
+        approved: ['APPROVED BY', 'Pengawas'],
         gap: ['PPL', 'dikurangi', 'PML'],
       };
       const details = ['nonUb','ub'].includes(group.key) ? definitions[field] : null;

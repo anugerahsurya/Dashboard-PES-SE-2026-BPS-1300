@@ -99,7 +99,7 @@ function Recap({data,previous,note}) {
   const labels={sls:'SLS',nonUb:'Non UB',ub:'UB'};
   const filteredRows=data.rows.filter(r=>(r.name+' '+r.code).toLocaleLowerCase('id').includes(query.trim().toLocaleLowerCase('id')));
   const columns=tab==='sls' ? [['target','Target'],['belum','Belum'],['sedang','Sedang'],['selesai','Selesai']] :
-    [['target','Target'],['officers','Petugas PPL'],...(tab==='nonUb'?[['draft','Draf']]:[]),['ppl','Progres PPL'],['pml','Progres PML'],['gap','Gap Progres PPL-PML'],['final','Olah final']];
+    [['target','Target'],['officers','Petugas PPL'],...(tab==='nonUb'?[['draft','Draf'],['approved','Approved']]:[]),['ppl','Progres PPL'],['pml','Progres PML'],['gap','Gap Progres PPL-PML'],['final','Olah final']];
   const validKeys = new Set(['name','deadline',...columns.map(([k])=>k)]);
   const activeSort = sort.key && validKeys.has(sort.key) ? sort : {key:null,dir:null};
   const toggleSort = key => {
@@ -140,7 +140,7 @@ function Recap({data,previous,note}) {
     return <td key={key} className={status ? (status.met?'achieved':'behind') : ''}
       title={status ? status.label+'; target '+targetText : undefined}>
       {progress ? <>{pct(progressValue(group,key),group.target,tab)}
-        {key!=='gap' && <><br/><Delta label={baseline ? deltaLabel(group,baseline,key,tab) : '—'}/></>}
+        {key!=='gap' && <><br/><Delta label={baseline ? deltaLabel(group,baseline,key,tab) : '-'}/></>}
         {status&&<small className="achievement-label">{status.met?'Tercapai':'Di bawah'} - {targetText}</small>}
       </> : integer.format(group[key])}</td>;
   });

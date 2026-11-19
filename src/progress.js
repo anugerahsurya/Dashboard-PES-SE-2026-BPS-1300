@@ -1,12 +1,13 @@
 export const stageNotes = {
   ppl: 'all except draft dan open',
-  pml: 'completed, reject, revoked',
-  final: 'ONLY COMPLETED',
+  approved: 'APPROVED BY Pengawas',
+  pml: 'completed, approved, reject, revoked',
+  final: 'COMPLETED + APPROVED',
   gap: 'PPL dikurangi PML',
 };
 
 export function progressValue(group, stage) {
-  return stage === 'gap' ? group.ppl - group.pml : group[stage];
+  return stage === 'gap' ? group.ppl - group.pml : (group[stage] ?? 0);
 }
 
 export function targetRatio(date, deadline, stage) {

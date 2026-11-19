@@ -18,6 +18,7 @@ const assignmentColumns = {
   draft: 'draft',
   'submitted by pencacah': 'submitted',
   'completed by pengawas': 'completed',
+  'approved by pengawas': 'approved',
   'rejected by pengawas': 'rejected',
   'revoked by pengawas': 'revoked',
 }
@@ -106,8 +107,8 @@ function sumNumbers(values) {
 
 function assignment(status, officers) {
   const target = sumNumbers(Object.values(status))
-  const pml = status.completed + status.rejected + status.revoked
-  return { ...status, target, officers, ppl: pml + status.submitted, pml, final: status.completed }
+  const pml = status.completed + status.approved + status.rejected + status.revoked
+  return { ...status, target, officers, ppl: pml + status.submitted, pml, final: status.completed + status.approved }
 }
 
 export function buildSnapshot({ sls, nonUb, ub }, date, time) {

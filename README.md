@@ -59,3 +59,9 @@ Aplikasi memakai riwayat Google Sheets, atau riwayat per tanggal di peramban dal
 4. Setelah unggahan berhasil, buka tab **PES YYYY-MM-DD HH.mm** pada spreadsheet tujuan. Nama memakai tanggal dan jam laporan WIB. Cek nama wilayah di A, tenggat di C, rekap di G sampai AI, serta tanggal laporan dan acuan progres di AK sampai AL. Kolom AM menyimpan jumlah UB berstatus *revoked*. Selisih zona waktu pengguna tidak mengubah tanggal laporan.
 5. Cek baris provinsi terhadap dashboard. Dengan tiga CSV bawaan, G11 berisi 244, O11 berisi 37.470, Z11 berisi 250, dan AH11 berisi 49. Persentase memakai target masing-masing kategori. Nama petugas wilayah (Innas) dan format berasal dari template. Masalah dan tanda laporan administratif pada B, E, dan F dimulai kosong pada tab baru dan dapat diisi pengelola.
 6. Pengiriman ulang dengan tanggal dan jam sama memperbarui tab yang dibuat aplikasi. Jam berbeda menghasilkan tab tersendiri. Jika nama tab telah dipakai untuk tab manual, ganti nama tab manual sebelum menyimpan. Template tetap dipertahankan. Jika respons gagal setelah tab terbit, kirim ulang data dengan tanggal dan jam yang sama untuk menyelesaikan penyimpanan riwayat.
+
+## Ekspor mulai 19 November 2026
+
+Status APPROVED BY Pengawas kini didukung. Total assignment mencakup seluruh status. Progres PPL mencakup semua status selain OPEN dan DRAFT. Progres PML mencakup COMPLETED, APPROVED, REJECTED dan REVOKED. Olah final adalah COMPLETED + APPROVED. Data lama yang belum memiliki approved menggunakan nilai nol.
+
+Pasang Code.gs terbaru dan deploy versi baru sebelum mengunggah CSV dengan APPROVED. Tab laporan menyimpan hitungan APPROVED Non-UB dan UB pada AN dan AO. Laporan CSV 19 November 2026 pukul 16.37 WIB tersedia sebagai data bawaan. Dashboard menampilkan laporan dengan tanggal/jam terbaru antara data bawaan dan riwayat server, dan memberi keterangan jika data bawaan lebih baru. Unggah tiga CSV untuk menerbitkan snapshot ini ke riwayat Google Sheets.
