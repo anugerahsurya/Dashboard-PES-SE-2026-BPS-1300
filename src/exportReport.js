@@ -141,7 +141,7 @@ export async function exportReport(data, previous, comparisonStatus) {
       const definitions = {
         ppl: ['all except', 'draft dan', 'open'],
         pml: ['completed,', 'approved,', 'reject, revoked'],
-        final: ['COMPLETED', '+ APPROVED'],
+        final: ['ONLY', 'COMPLETED'],
         approved: ['APPROVED BY', 'Pengawas'],
         gap: ['PPL', 'dikurangi', 'PML'],
       };

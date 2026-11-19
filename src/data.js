@@ -108,7 +108,7 @@ function sumNumbers(values) {
 function assignment(status, officers) {
   const target = sumNumbers(Object.values(status))
   const pml = status.completed + status.approved + status.rejected + status.revoked
-  return { ...status, target, officers, ppl: pml + status.submitted, pml, final: status.completed + status.approved }
+  return { ...status, target, officers, ppl: pml + status.submitted, pml, final: status.completed }
 }
 
 export function buildSnapshot({ sls, nonUb, ub }, date, time) {

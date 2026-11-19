@@ -65,7 +65,7 @@ function validGroup_(group, category) {
   if (!Number.isSafeInteger(approved) || approved < 0) return false;
   if (group.target !== statuses.reduce((sum, key) => sum + group[key], 0) + approved) return false;
   if (category === 'sls') return true;
-  return group.final === group.completed + approved &&
+  return group.final === group.completed &&
     group.pml === group.completed + approved + group.rejected + group.revoked &&
     group.ppl === group.pml + group.submitted;
 }
@@ -229,8 +229,8 @@ function writeReport_(snapshot) {
     sheet.getRange('AM2:AM11').setValues(all.map(r => [r.ub.revoked]));
     sheet.getRange('AN1:AO1').setValues([['APPROVED BY Pengawas (Non-UB)', 'APPROVED BY Pengawas (UB)']]);
     sheet.getRange('AN2:AO11').setValues(all.map(r => [r.nonUb.approved || 0, r.ub.approved || 0]));
-    sheet.getRange('Y1').setValue('Progres Olah final Non UB (COMPLETED + APPROVED)');
-    sheet.getRange('AD1').setValue('Progres Olah final UB (COMPLETED + APPROVED)');
+    sheet.getRange('Y1').setValue('Progres Olah final Non UB (ONLY COMPLETED)');
+    sheet.getRange('AD1').setValue('Progres Olah final UB (ONLY COMPLETED)');
     sheet.getRange('X1').setValue('Progres PML Non UB (completed, approved, reject, revoked)');
     sheet.getRange('AC1').setValue('Progres PML UB (completed, approved, reject, revoked)');
     const today = dateSerial_(snapshot.date);
