@@ -28,7 +28,7 @@ function check(x){
 async function api(body, date){
   const url=new URL(endpoint);
   if(date)url.searchParams.set('date',date);
-  const response=await fetch(url,body?{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body),signal:AbortSignal.timeout(45000)}:{cache:'no-store',signal:AbortSignal.timeout(20000)});
+  const response=await fetch(url,body?{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body),signal:AbortSignal.timeout(45000)}:{cache:'no-store',signal:AbortSignal.timeout(10000)});
   if(!response.ok)throw new Error('Server tidak dapat diakses. Periksa URL dan akses deployment.');
   const result=await response.json();if(!result.ok)throw new Error(result.error||'Permintaan gagal.');return result;
 }
@@ -82,8 +82,16 @@ function bundled(date){
 }
 function App(){
  const [data,setData]=useState(initial),[open,setOpen]=useState(false),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[notice,setNotice]=useState('');
- const [assetsReady,setAssetsReady]=useState(false);
- useEffect(()=>{const art=new Image();art.src=landscapeUrl;Promise.allSettled([document.fonts.ready,art.decode()]).then(()=>setAssetsReady(true));},[]);
+ const [fontsReady,setFontsReady]=useState(false),[artReady,setArtReady]=useState(false);
+ const assetsReady=fontsReady&&artReady;
+ const loadPercent=15+(fontsReady?15:0)+(artReady?15:0)+(!loading?55:0);
+ useEffect(()=>{
+   let alive=true;
+   const art=new Image();art.src=landscapeUrl;
+   document.fonts.ready.finally(()=>{if(alive)setFontsReady(true);});
+   art.decode().then(()=>{if(alive)setArtReady(true);},()=>{if(alive)setArtReady(true);});
+   return()=>{alive=false;};
+ },[]);
  const [comparisonAttempt,setComparisonAttempt]=useState(0);
  const [comparison,setComparison]=useState({date:null,previous:null,status:'loading'});
  useEffect(()=>{
@@ -139,9 +147,15 @@ function App(){
  const current=comparison.date===data.date ? comparison : {previous:null,status:'loading'};
  async function download(){setBusy(true);try{await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));await exportReport(data,current.previous,current.status);}catch(e){setNotice(e.message);}finally{setBusy(false);}}
  useEffect(()=>{
-   if(!loading && assetsReady && current.status!=='loading')document.getElementById('startup-loading')?.remove();
- },[loading,assetsReady,current.status]);
- return <><Dashboard onRetryComparison={()=>setComparisonAttempt(value=>value+1)} ready={!loading&&assetsReady&&current.status!=='loading'} data={data} previous={current.previous} comparisonStatus={current.status} onUpload={()=>setOpen(true)} onExport={download} exporting={busy}/>{(loading||!assetsReady||current.status==='loading')&&<div className="app-loading" role="status"><div className="loading-content"><span>Memuat progres...</span><div className="loading-track" role="progressbar" aria-label="Memuat progres"><i/></div></div></div>}
+   const startup=document.getElementById('startup-loading');
+   if(startup){
+     startup.querySelector('.loading-percent').textContent=loadPercent+'%';
+     startup.querySelector('[role="progressbar"]').setAttribute('aria-valuenow',loadPercent);
+     startup.querySelector('.loading-track i').style.width=loadPercent+'%';
+     if(!loading && assetsReady)startup.remove();
+   }
+ },[loading,assetsReady,loadPercent]);
+ return <><Dashboard onRetryComparison={()=>setComparisonAttempt(value=>value+1)} ready={!loading&&assetsReady} data={data} previous={current.previous} comparisonStatus={current.status} onUpload={()=>setOpen(true)} onExport={download} exporting={busy}/>{(loading||!assetsReady)&&<div className="app-loading" role="status"><div className="loading-content"><span>Memuat dashboard...</span><strong className="loading-percent">{loadPercent}%</strong><div className="loading-track" role="progressbar" aria-label="Memuat dashboard" aria-valuemin={0} aria-valuemax={100} aria-valuenow={loadPercent}><i style={{width:loadPercent+'%'}}/></div></div></div>}
  {notice&&<div className="app-notice" role="status">{notice}<button aria-label="Tutup pemberitahuan" onClick={()=>setNotice('')}><X size={16}/></button></div>}
  {open&&<UploadDialog close={()=>setOpen(false)} apply={apply}/>}</>
 }
