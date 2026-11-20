@@ -32,6 +32,13 @@ async function api(body, date){
   if(!response.ok)throw new Error('Server tidak dapat diakses. Periksa URL dan akses deployment.');
   const result=await response.json();if(!result.ok)throw new Error(result.error||'Permintaan gagal.');return result;
 }
+async function readSnapshot(date){
+  try{return await api(undefined,date);}
+  catch{
+    await new Promise(resolve=>setTimeout(resolve,600));
+    return api(undefined,date);
+  }
+}
 function wib(){
   const d=new Date(Date.now()+7*3600e3).toISOString();
   return [d.slice(0,10),d.slice(11,16)];
@@ -77,6 +84,7 @@ function App(){
  const [data,setData]=useState(initial),[open,setOpen]=useState(false),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[notice,setNotice]=useState('');
  const [assetsReady,setAssetsReady]=useState(false);
  useEffect(()=>{const art=new Image();art.src=landscapeUrl;Promise.allSettled([document.fonts.ready,art.decode()]).then(()=>setAssetsReady(true));},[]);
+ const [comparisonAttempt,setComparisonAttempt]=useState(0);
  const [comparison,setComparison]=useState({date:null,previous:null,status:'loading'});
  useEffect(()=>{
    let alive=true;
@@ -103,7 +111,7 @@ function App(){
    const date=previousDate(data.date);
    async function loadPrevious(){
      try{
-       const stored=endpoint?(await api(undefined,date)).snapshot:readHistory()[date];
+       const stored=endpoint?(await readSnapshot(date)).snapshot:readHistory()[date];
        const previous=stored?check(stored):bundled(date);
        if(previous && previous.date!==date)throw new Error('Tanggal acuan tidak sesuai.');
        if(alive)setComparison({date:data.date,previous,status:previous?'ready':'missing'});
@@ -112,7 +120,7 @@ function App(){
    setComparison({date:data.date,previous:null,status:'loading'});
    loadPrevious();
    return()=>{alive=false;};
- },[data,loading]);
+ },[data,loading,comparisonAttempt]);
  async function apply(snapshot,adminKey){
    if(endpoint){
      const result=await api({adminKey,snapshot});
@@ -133,7 +141,7 @@ function App(){
  useEffect(()=>{
    if(!loading && assetsReady && current.status!=='loading')document.getElementById('startup-loading')?.remove();
  },[loading,assetsReady,current.status]);
- return <><Dashboard ready={!loading&&assetsReady&&current.status!=='loading'} data={data} previous={current.previous} comparisonStatus={current.status} onUpload={()=>setOpen(true)} onExport={download} exporting={busy}/>{(loading||!assetsReady||current.status==='loading')&&<div className="app-loading" role="status"><div className="loading-content"><span>Memuat progres...</span><div className="loading-track" role="progressbar" aria-label="Memuat progres"><i/></div></div></div>}
+ return <><Dashboard onRetryComparison={()=>setComparisonAttempt(value=>value+1)} ready={!loading&&assetsReady&&current.status!=='loading'} data={data} previous={current.previous} comparisonStatus={current.status} onUpload={()=>setOpen(true)} onExport={download} exporting={busy}/>{(loading||!assetsReady||current.status==='loading')&&<div className="app-loading" role="status"><div className="loading-content"><span>Memuat progres...</span><div className="loading-track" role="progressbar" aria-label="Memuat progres"><i/></div></div></div>}
  {notice&&<div className="app-notice" role="status">{notice}<button aria-label="Tutup pemberitahuan" onClick={()=>setNotice('')}><X size={16}/></button></div>}
  {open&&<UploadDialog close={()=>setOpen(false)} apply={apply}/>}</>
 }

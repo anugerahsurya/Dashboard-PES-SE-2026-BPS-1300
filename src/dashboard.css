@@ -122,3 +122,5 @@ button,input,select{font:inherit}
 .recap th[aria-sort="ascending"] .sort-arrow,.recap th[aria-sort="descending"] .sort-arrow{opacity:1;color:#9a4e20}
 .sort-heading:hover{color:#8c451d}.sort-heading:focus-visible{outline:2px solid #256d70;outline-offset:3px;border-radius:3px}
 @media(max-width:680px){.sort-heading{min-height:44px}}
+.comparison-retry{margin-left:8px;border:1px solid #d5c0a7;border-radius:6px;background:#fff5e7;color:#78421f;padding:7px 12px;font:inherit;font-weight:650;cursor:pointer}
+.comparison-retry:focus-visible{outline:2px solid #256d70;outline-offset:2px}
