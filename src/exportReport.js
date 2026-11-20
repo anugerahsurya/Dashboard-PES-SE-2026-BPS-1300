@@ -140,7 +140,7 @@ export async function exportReport(data, previous, comparisonStatus) {
       const compare = Boolean(baseline && (group.key === 'nonUb' || group.key === 'ub') && !['officers', 'target', 'gap', 'open'].includes(field));
       const definitions = {
         ppl: ['all except', 'draft dan', 'open'],
-        pml: ['completed,', 'approved,', 'reject, revoked'],
+        pml: ['completed, approved,', 'reject, reject admin,', 'revoked'],
         final: ['COMPLETED', '+ APPROVED'],
         gap: ['PPL', 'dikurangi', 'PML'],
       };

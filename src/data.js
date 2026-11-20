@@ -20,6 +20,7 @@ const assignmentColumns = {
   'completed by pengawas': 'completed',
   'approved by pengawas': 'approved',
   'rejected by pengawas': 'rejected',
+  'rejected by admin kabupaten': 'rejectedByAdmin',
   'revoked by pengawas': 'revoked',
 }
 
@@ -107,7 +108,7 @@ function sumNumbers(values) {
 
 function assignment(status, officers) {
   const target = sumNumbers(Object.values(status))
-  const pml = status.completed + status.approved + status.rejected + status.revoked
+  const pml = status.completed + status.approved + status.rejected + status.rejectedByAdmin + status.revoked
   return { ...status, target, officers, ppl: pml + status.submitted, pml, final: status.completed + status.approved }
 }
 
