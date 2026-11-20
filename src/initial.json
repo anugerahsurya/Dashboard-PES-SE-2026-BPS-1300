@@ -1,6 +1,6 @@
 {
-  "date": "2026-11-19",
-  "time": "16:37",
+  "date": "2026-11-20",
+  "time": "12:00",
   "rows": [
     {
       "code": "1303",
@@ -13,32 +13,32 @@
         "target": 27
       },
       "nonUb": {
-        "open": 1549,
-        "draft": 781,
-        "submitted": 1118,
+        "open": 1295,
+        "draft": 711,
+        "submitted": 1230,
         "completed": 2213,
-        "approved": 89,
-        "rejected": 53,
+        "approved": 328,
+        "rejected": 60,
         "revoked": 0,
-        "target": 5803,
+        "target": 5837,
         "officers": 21,
-        "ppl": 3473,
-        "pml": 2355,
-        "final": 2213
+        "ppl": 3831,
+        "pml": 2601,
+        "final": 2541
       },
       "ub": {
-        "open": 6,
-        "draft": 14,
+        "open": 4,
+        "draft": 12,
         "submitted": 0,
-        "completed": 3,
+        "completed": 7,
         "approved": 0,
         "rejected": 0,
         "revoked": 0,
         "target": 23,
         "officers": 3,
-        "ppl": 3,
-        "pml": 3,
-        "final": 3
+        "ppl": 7,
+        "pml": 7,
+        "final": 7
       }
     },
     {
@@ -52,32 +52,32 @@
         "target": 29
       },
       "nonUb": {
-        "open": 380,
-        "draft": 574,
-        "submitted": 527,
-        "completed": 3274,
-        "approved": 111,
-        "rejected": 34,
-        "revoked": 1,
-        "target": 4901,
+        "open": 306,
+        "draft": 469,
+        "submitted": 487,
+        "completed": 3261,
+        "approved": 389,
+        "rejected": 32,
+        "revoked": 0,
+        "target": 4944,
         "officers": 22,
-        "ppl": 3947,
-        "pml": 3420,
-        "final": 3274
+        "ppl": 4169,
+        "pml": 3682,
+        "final": 3650
       },
       "ub": {
         "open": 1,
         "draft": 12,
-        "submitted": 8,
-        "completed": 8,
+        "submitted": 0,
+        "completed": 15,
         "approved": 0,
-        "rejected": 0,
+        "rejected": 1,
         "revoked": 0,
         "target": 29,
         "officers": 4,
         "ppl": 16,
-        "pml": 8,
-        "final": 8
+        "pml": 16,
+        "final": 15
       }
     },
     {
@@ -91,32 +91,32 @@
         "target": 28
       },
       "nonUb": {
-        "open": 809,
-        "draft": 702,
-        "submitted": 520,
-        "completed": 3414,
-        "approved": 9,
-        "rejected": 20,
-        "revoked": 2,
-        "target": 5476,
+        "open": 499,
+        "draft": 620,
+        "submitted": 742,
+        "completed": 3412,
+        "approved": 292,
+        "rejected": 14,
+        "revoked": 3,
+        "target": 5582,
         "officers": 21,
-        "ppl": 3965,
-        "pml": 3445,
-        "final": 3414
+        "ppl": 4463,
+        "pml": 3721,
+        "final": 3704
       },
       "ub": {
         "open": 0,
-        "draft": 21,
-        "submitted": 2,
-        "completed": 5,
+        "draft": 15,
+        "submitted": 6,
+        "completed": 7,
         "approved": 0,
         "rejected": 0,
         "revoked": 0,
         "target": 28,
         "officers": 4,
-        "ppl": 7,
-        "pml": 5,
-        "final": 5
+        "ppl": 13,
+        "pml": 7,
+        "final": 7
       }
     },
     {
@@ -125,37 +125,37 @@
       "deadline": "2026-11-23",
       "sls": {
         "belum": 0,
-        "sedang": 19,
-        "selesai": 4,
+        "sedang": 16,
+        "selesai": 7,
         "target": 23
       },
       "nonUb": {
-        "open": 342,
-        "draft": 336,
-        "submitted": 557,
-        "completed": 3642,
-        "approved": 55,
-        "rejected": 45,
+        "open": 231,
+        "draft": 246,
+        "submitted": 423,
+        "completed": 3638,
+        "approved": 422,
+        "rejected": 32,
         "revoked": 0,
-        "target": 4977,
+        "target": 4992,
         "officers": 20,
-        "ppl": 4299,
-        "pml": 3742,
-        "final": 3642
+        "ppl": 4515,
+        "pml": 4092,
+        "final": 4060
       },
       "ub": {
         "open": 4,
-        "draft": 8,
-        "submitted": 3,
-        "completed": 11,
+        "draft": 5,
+        "submitted": 0,
+        "completed": 17,
         "approved": 0,
         "rejected": 0,
         "revoked": 0,
         "target": 26,
         "officers": 4,
-        "ppl": 14,
-        "pml": 11,
-        "final": 11
+        "ppl": 17,
+        "pml": 17,
+        "final": 17
       }
     },
     {
@@ -164,37 +164,37 @@
       "deadline": "2026-11-25",
       "sls": {
         "belum": 0,
-        "sedang": 25,
-        "selesai": 4,
+        "sedang": 24,
+        "selesai": 5,
         "target": 29
       },
       "nonUb": {
-        "open": 563,
-        "draft": 547,
-        "submitted": 482,
-        "completed": 3378,
-        "approved": 237,
-        "rejected": 94,
-        "revoked": 0,
-        "target": 5301,
+        "open": 412,
+        "draft": 387,
+        "submitted": 436,
+        "completed": 3366,
+        "approved": 667,
+        "rejected": 101,
+        "revoked": 1,
+        "target": 5370,
         "officers": 21,
-        "ppl": 4191,
-        "pml": 3709,
-        "final": 3378
+        "ppl": 4571,
+        "pml": 4135,
+        "final": 4033
       },
       "ub": {
-        "open": 4,
-        "draft": 5,
-        "submitted": 2,
-        "completed": 16,
+        "open": 2,
+        "draft": 1,
+        "submitted": 5,
+        "completed": 18,
         "approved": 0,
-        "rejected": 0,
+        "rejected": 1,
         "revoked": 0,
         "target": 27,
         "officers": 4,
-        "ppl": 18,
-        "pml": 16,
-        "final": 16
+        "ppl": 24,
+        "pml": 19,
+        "final": 18
       }
     },
     {
@@ -203,37 +203,37 @@
       "deadline": "2026-11-27",
       "sls": {
         "belum": 0,
-        "sedang": 19,
-        "selesai": 15,
+        "sedang": 17,
+        "selesai": 17,
         "target": 34
       },
       "nonUb": {
-        "open": 453,
-        "draft": 249,
-        "submitted": 54,
-        "completed": 2964,
-        "approved": 81,
-        "rejected": 5,
+        "open": 260,
+        "draft": 238,
+        "submitted": 113,
+        "completed": 2963,
+        "approved": 247,
+        "rejected": 4,
         "revoked": 0,
-        "target": 3806,
+        "target": 3825,
         "officers": 13,
-        "ppl": 3104,
-        "pml": 3050,
-        "final": 2964
+        "ppl": 3327,
+        "pml": 3214,
+        "final": 3210
       },
       "ub": {
         "open": 2,
         "draft": 10,
         "submitted": 1,
-        "completed": 29,
+        "completed": 30,
         "approved": 0,
-        "rejected": 2,
+        "rejected": 1,
         "revoked": 0,
         "target": 44,
         "officers": 6,
         "ppl": 32,
         "pml": 31,
-        "final": 29
+        "final": 30
       }
     },
     {
@@ -242,37 +242,37 @@
       "deadline": "2026-11-27",
       "sls": {
         "belum": 0,
-        "sedang": 21,
-        "selesai": 2,
+        "sedang": 22,
+        "selesai": 1,
         "target": 23
       },
       "nonUb": {
-        "open": 522,
-        "draft": 289,
-        "submitted": 272,
+        "open": 415,
+        "draft": 283,
+        "submitted": 131,
         "completed": 2633,
-        "approved": 21,
-        "rejected": 47,
+        "approved": 248,
+        "rejected": 111,
         "revoked": 1,
-        "target": 3785,
+        "target": 3822,
         "officers": 16,
-        "ppl": 2974,
-        "pml": 2702,
-        "final": 2633
+        "ppl": 3124,
+        "pml": 2993,
+        "final": 2881
       },
       "ub": {
         "open": 1,
-        "draft": 15,
+        "draft": 14,
         "submitted": 0,
-        "completed": 9,
+        "completed": 10,
         "approved": 0,
         "rejected": 0,
         "revoked": 0,
         "target": 25,
         "officers": 4,
-        "ppl": 9,
-        "pml": 9,
-        "final": 9
+        "ppl": 10,
+        "pml": 10,
+        "final": 10
       }
     },
     {
@@ -286,30 +286,30 @@
         "target": 26
       },
       "nonUb": {
-        "open": 354,
-        "draft": 476,
-        "submitted": 226,
-        "completed": 2959,
-        "approved": 0,
-        "rejected": 36,
-        "revoked": 1,
-        "target": 4052,
+        "open": 316,
+        "draft": 418,
+        "submitted": 219,
+        "completed": 2956,
+        "approved": 124,
+        "rejected": 40,
+        "revoked": 0,
+        "target": 4073,
         "officers": 16,
-        "ppl": 3222,
-        "pml": 2996,
-        "final": 2959
+        "ppl": 3339,
+        "pml": 3120,
+        "final": 3080
       },
       "ub": {
         "open": 6,
-        "draft": 8,
-        "submitted": 0,
+        "draft": 7,
+        "submitted": 1,
         "completed": 10,
         "approved": 0,
         "rejected": 0,
         "revoked": 0,
         "target": 24,
         "officers": 3,
-        "ppl": 10,
+        "ppl": 11,
         "pml": 10,
         "final": 10
       }
@@ -320,23 +320,23 @@
       "deadline": "2026-11-25",
       "sls": {
         "belum": 0,
-        "sedang": 23,
-        "selesai": 2,
+        "sedang": 21,
+        "selesai": 4,
         "target": 25
       },
       "nonUb": {
-        "open": 405,
-        "draft": 332,
-        "submitted": 187,
-        "completed": 2108,
-        "approved": 1,
-        "rejected": 8,
+        "open": 372,
+        "draft": 289,
+        "submitted": 133,
+        "completed": 2107,
+        "approved": 172,
+        "rejected": 29,
         "revoked": 0,
-        "target": 3041,
+        "target": 3102,
         "officers": 13,
-        "ppl": 2304,
-        "pml": 2117,
-        "final": 2108
+        "ppl": 2441,
+        "pml": 2308,
+        "final": 2279
       },
       "ub": {
         "open": 7,
@@ -357,37 +357,37 @@
   "totals": {
     "sls": {
       "belum": 0,
-      "sedang": 202,
-      "selesai": 42,
+      "sedang": 195,
+      "selesai": 49,
       "target": 244
     },
     "nonUb": {
-      "open": 5377,
-      "draft": 4286,
-      "submitted": 3943,
-      "completed": 26585,
-      "approved": 604,
-      "rejected": 342,
+      "open": 4106,
+      "draft": 3661,
+      "submitted": 3914,
+      "completed": 26549,
+      "approved": 2889,
+      "rejected": 423,
       "revoked": 5,
-      "target": 41142,
+      "target": 41547,
       "officers": 163,
-      "ppl": 31479,
-      "pml": 27536,
-      "final": 26585
+      "ppl": 33780,
+      "pml": 29866,
+      "final": 29438
     },
     "ub": {
-      "open": 31,
-      "draft": 100,
-      "submitted": 19,
-      "completed": 97,
+      "open": 27,
+      "draft": 83,
+      "submitted": 16,
+      "completed": 120,
       "approved": 0,
-      "rejected": 3,
+      "rejected": 4,
       "revoked": 0,
       "target": 250,
       "officers": 35,
-      "ppl": 119,
-      "pml": 100,
-      "final": 97
+      "ppl": 140,
+      "pml": 124,
+      "final": 120
     }
   }
 }

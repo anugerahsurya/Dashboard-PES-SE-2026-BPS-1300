@@ -99,7 +99,7 @@ function Recap({data,previous,note}) {
   const labels={sls:'SLS',nonUb:'Non UB',ub:'UB'};
   const filteredRows=data.rows.filter(r=>(r.name+' '+r.code).toLocaleLowerCase('id').includes(query.trim().toLocaleLowerCase('id')));
   const columns=tab==='sls' ? [['target','Target'],['belum','Belum'],['sedang','Sedang'],['selesai','Selesai']] :
-    [['target','Target'],['officers','Petugas PPL'],...(tab==='nonUb'?[['draft','Draf'],['approved','Approved']]:[]),['ppl','Progres PPL'],['pml','Progres PML'],['gap','Gap Progres PPL-PML'],['final','Olah final']];
+    [['target','Target'],['officers','Petugas PPL'],['open','Open'],...(tab==='nonUb'?[['draft','Draf']]:[]),['ppl','Progres PPL'],['pml','Progres PML'],['gap','Gap Progres PPL-PML'],['final','Olah final']];
   const validKeys = new Set(['name','deadline',...columns.map(([k])=>k)]);
   const activeSort = sort.key && validKeys.has(sort.key) ? sort : {key:null,dir:null};
   const toggleSort = key => {
@@ -114,7 +114,7 @@ function Recap({data,previous,note}) {
     const dir = activeSort.dir === 'asc' ? 1 : -1;
     if (activeSort.key === 'name') return dir * a.name.localeCompare(b.name,'id');
     if (activeSort.key === 'deadline') return dir * a.deadline.localeCompare(b.deadline) || a.name.localeCompare(b.name,'id');
-    const isProgress = tab !== 'sls' && !['target','officers'].includes(activeSort.key);
+    const isProgress = tab !== 'sls' && !['target','officers','open'].includes(activeSort.key);
     const val = row => {
       const g = row[tab];
       if (!isProgress) return g[activeSort.key];
@@ -134,7 +134,7 @@ function Recap({data,previous,note}) {
   };
   const byCode = new Map(previous?.rows.map(row=>[row.code,row]));
   const renderCells = (group, baseline, members) => columns.map(([key])=>{
-    const progress = tab !== 'sls' && !['target','officers'].includes(key);
+    const progress = tab !== 'sls' && !['target','officers','open'].includes(key);
     const status = achievement(members,tab,key,data.date);
     const targetText = status ? percentage[tab].format(status.target) : '';
     return <td key={key} className={status ? (status.met?'achieved':'behind') : ''}
@@ -156,7 +156,7 @@ export default function Dashboard({data,onUpload,onExport,exporting,previous=nul
   const [paused,setPaused]=useState(false);
   const {totals,rows}=data;
   const baseline = comparisonStatus==='ready' ? previous : null;
-  const note = comparisonNote(data.date,comparisonStatus);
+  const note = comparisonNote(data.date,comparisonStatus)+(baseline ? ' Acuan pengambilan terakhir: '+baseline.time+' WIB.' : '');
   const finalChange = group => baseline ? deltaLabel(totals[group],baseline.totals[group],'final',group) : '—';
   return <div className={ready?"pes-site is-ready":"pes-site is-loading"}><header className="site-header"><div className="header-inner"><a href="#ringkasan" className="brand" aria-label="PES Monitor, Ringkasan"><img className="brand-symbol" src="/pes-monitor.svg" alt=""/><strong>PES <span>Monitor</span></strong></a><span className="institution">BPS Provinsi Sumatera Barat</span><button type="button" onClick={onUpload} className="btn btn-upload"><ArrowUpFromLine size={16}/>Unggah CSV</button></div></header>
     <main className="pes-main" id="ringkasan">

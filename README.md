@@ -62,6 +62,8 @@ Aplikasi memakai riwayat Google Sheets, atau riwayat per tanggal di peramban dal
 
 ## Ekspor mulai 19 November 2026
 
-Status APPROVED BY Pengawas kini didukung. Total assignment mencakup seluruh status. Progres PPL mencakup semua status selain OPEN dan DRAFT. Progres PML mencakup COMPLETED, APPROVED, REJECTED dan REVOKED. Olah final hanya COMPLETED. Data lama yang belum memiliki approved menggunakan nilai nol.
+Status APPROVED BY Pengawas kini didukung. Total assignment mencakup seluruh status. Progres PPL mencakup semua status selain OPEN dan DRAFT. Progres PML mencakup COMPLETED, APPROVED, REJECTED dan REVOKED. Olah final adalah COMPLETED + APPROVED. Data lama yang belum memiliki approved menggunakan nilai nol.
 
 Pasang Code.gs terbaru dan deploy versi baru sebelum mengunggah CSV dengan APPROVED. Tab laporan menyimpan hitungan APPROVED Non-UB dan UB pada AN dan AO. Laporan CSV 19 November 2026 pukul 16.37 WIB tersedia sebagai data bawaan. Dashboard menampilkan laporan dengan tanggal/jam terbaru antara data bawaan dan riwayat server, dan memberi keterangan jika data bawaan lebih baru. Unggah tiga CSV untuk menerbitkan snapshot ini ke riwayat Google Sheets.
+
+Acuan H-1 memilih waktu pengambilan laporan paling akhir pada tanggal sebelumnya. Unggah mundur dengan jam lebih awal tetap membuat tab laporan, sementara snapshot harian memakai waktu pengambilan terbesar. Open ditampilkan sebagai jumlah assignment pada tabel web dan PNG.

@@ -65,7 +65,7 @@ function validGroup_(group, category) {
   if (!Number.isSafeInteger(approved) || approved < 0) return false;
   if (group.target !== statuses.reduce((sum, key) => sum + group[key], 0) + approved) return false;
   if (category === 'sls') return true;
-  return group.final === group.completed &&
+  return (group.final === group.completed || group.final === group.completed + approved) &&
     group.pml === group.completed + approved + group.rejected + group.revoked &&
     group.ppl === group.pml + group.submitted;
 }
@@ -86,6 +86,30 @@ function validSnapshot_(s) {
   });
 }
 
+function normalizedSnapshot_(snapshot) {
+  const copy = JSON.parse(JSON.stringify(snapshot));
+  for (const row of copy.rows.concat(copy.totals)) {
+    for (const group of ['nonUb', 'ub']) {
+      row[group].final = row[group].completed + (row[group].approved || 0);
+    }
+  }
+  return copy;
+}
+
+// Select the latest collection time, regardless of row or upload order.
+function latestRecord_(sheet, date) {
+  const matches = dates_(sheet);
+  let selected = null;
+  for (let i = 0; i < matches.length; i++) {
+    if (matches[i] !== date) continue;
+    const values = sheet.getRange(i + 2, 1, 1, 3).getValues()[0];
+    const snapshot = JSON.parse(values[2]);
+    const rank = snapshot.time + '|' + String(values[1]);
+    if (!selected || rank > selected.rank) selected = {row:i+2,rank:rank,snapshot:normalizedSnapshot_(snapshot)};
+  }
+  return selected;
+}
+
 function doGet(e) {
   try {
     const requested = (e.parameter || {}).date;
@@ -93,8 +117,8 @@ function doGet(e) {
     const sheet = verifySheet_(openBook_().getSheetByName(SHEET_NAME));
     const dates = dates_(sheet);
     const date = requested || dates.reduce((latest, current) => current > latest ? current : latest, '');
-    const index = dates.indexOf(date);
-    const snapshot = index < 0 ? null : JSON.parse(sheet.getRange(index + 2, 3).getValue());
+    const record = latestRecord_(sheet, date);
+    const snapshot = record ? record.snapshot : null;
     return json_({ok: true, snapshot: snapshot});
   } catch (error) {
     console.error(error.message);
@@ -113,16 +137,17 @@ function doPost(e) {
   }
   const key = PropertiesService.getScriptProperties().getProperty('ADMIN_KEY');
   if (!key || !body || key !== body.adminKey) return json_({ok: false, error: 'Kunci admin tidak sesuai.'});
-  const snapshot = body.snapshot;
-  if (!validSnapshot_(snapshot)) return json_({ok: false, error: 'Tanggal, wilayah, atau rekap status laporan tidak valid.'});
+  const input = body.snapshot;
+  if (!validSnapshot_(input)) return json_({ok: false, error: 'Tanggal, wilayah, atau rekap status laporan tidak valid.'});
+  const snapshot = normalizedSnapshot_(input);
   const payload = JSON.stringify(snapshot);
   if (payload.length > 49000) return json_({ok: false, error: 'Snapshot terlalu besar untuk disimpan.'});
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(10000)) return json_({ok: false, error: 'Admin lain sedang menyimpan. Coba lagi.'});
   try {
     const sheet = verifySheet_(openBook_().getSheetByName(SHEET_NAME));
-    const index = dates_(sheet).indexOf(snapshot.date);
-    const row = index < 0 ? sheet.getLastRow() + 1 : index + 2;
+    const previous = latestRecord_(sheet, snapshot.date);
+    const row = previous ? previous.row : sheet.getLastRow() + 1;
     if (row > sheet.getMaxRows()) sheet.insertRowsAfter(sheet.getMaxRows(), 1);
     let reportSheetName;
     try {
@@ -131,9 +156,11 @@ function doPost(e) {
       console.error(error.message);
       return json_({ok:false,error:'Tab laporan gagal disiapkan. Periksa akses edit, struktur template, dan nama tab pada spreadsheet laporan. Snapshot belum diterbitkan.'});
     }
-    sheet.getRange(row, 1, 1, 3).setNumberFormat('@').setValues([[snapshot.date, new Date().toISOString(), payload]]);
+    if (!previous || snapshot.time >= previous.snapshot.time) {
+      sheet.getRange(row, 1, 1, 3).setNumberFormat('@').setValues([[snapshot.date, new Date().toISOString(), payload]]);
+    }
     SpreadsheetApp.flush();
-    return json_({ok: true, snapshot: snapshot, reportSheetName: reportSheetName || undefined});
+    return json_({ok: true, snapshot: previous && snapshot.time < previous.snapshot.time ? previous.snapshot : snapshot, reportSheetName: reportSheetName || undefined});
   } catch (error) {
     console.error(error.message);
     return json_({ok: false, error: 'Snapshot gagal disimpan. Periksa konfigurasi Apps Script.'});
@@ -229,8 +256,8 @@ function writeReport_(snapshot) {
     sheet.getRange('AM2:AM11').setValues(all.map(r => [r.ub.revoked]));
     sheet.getRange('AN1:AO1').setValues([['APPROVED BY Pengawas (Non-UB)', 'APPROVED BY Pengawas (UB)']]);
     sheet.getRange('AN2:AO11').setValues(all.map(r => [r.nonUb.approved || 0, r.ub.approved || 0]));
-    sheet.getRange('Y1').setValue('Progres Olah final Non UB (ONLY COMPLETED)');
-    sheet.getRange('AD1').setValue('Progres Olah final UB (ONLY COMPLETED)');
+    sheet.getRange('Y1').setValue('Progres Olah final Non UB (COMPLETED + APPROVED)');
+    sheet.getRange('AD1').setValue('Progres Olah final UB (COMPLETED + APPROVED)');
     sheet.getRange('X1').setValue('Progres PML Non UB (completed, approved, reject, revoked)');
     sheet.getRange('AC1').setValue('Progres PML UB (completed, approved, reject, revoked)');
     const today = dateSerial_(snapshot.date);
@@ -265,12 +292,35 @@ function syncLatestReport() {
     const dates = dates_(sheet);
     const latest = dates.reduce((a,b) => a > b ? a : b, '');
     if (!latest) throw new Error('Belum ada snapshot tersimpan.');
-    const snapshot = JSON.parse(sheet.getRange(dates.indexOf(latest)+2,3).getValue());
+    const snapshot = latestRecord_(sheet, latest).snapshot;
     if (!validSnapshot_(snapshot)) throw new Error('Snapshot terbaru tidak valid.');
     const name = writeReport_(snapshot);
     if (!name) throw new Error('Isi Script Property REPORT_SPREADSHEET_ID.');
     console.log('Tab laporan tersinkron: ' + name);
     return name;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// Jalankan sekali dari editor untuk memperbarui final pada riwayat yang telah tersimpan.
+function recalculateStoredFinals() {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    const sheet = verifySheet_(openBook_().getSheetByName(SHEET_NAME));
+    const count = sheet.getLastRow() - 1;
+    if (count < 1) return 0;
+    const rows = sheet.getRange(2,3,count,1).getValues();
+    const updated = rows.map(row => {
+      const snapshot = JSON.parse(row[0]);
+      if (!validSnapshot_(snapshot)) throw new Error('Snapshot riwayat tidak valid.');
+      return [JSON.stringify(normalizedSnapshot_(snapshot))];
+    });
+    sheet.getRange(2,3,count,1).setValues(updated);
+    SpreadsheetApp.flush();
+    console.log('Olah final dihitung ulang untuk ' + count + ' snapshot.');
+    return count;
   } finally {
     lock.releaseLock();
   }
