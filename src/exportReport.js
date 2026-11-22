@@ -31,7 +31,7 @@ const groups = [
     ['Target', 'target', 100], ['Petugas', 'officers', 91], ['Open', 'open', 100], ['Draf', 'draft', 108], ['PPL', 'ppl', 110], ['PML', 'pml', 110], ['Gap Progres', 'gap', 100], ['Final', 'final', 110]
   ] },
   { key: 'ub', label: 'PES SE2026 · UB', tint: '#e2eaf3', color: '#415a7a', columns: [
-    ['Target', 'target', 82], ['Petugas', 'officers', 90], ['Open', 'open', 95], ['PPL', 'ppl', 97], ['PML', 'pml', 97], ['Gap Progres', 'gap', 95], ['Final', 'final', 98]
+    ['Target', 'target', 82], ['Petugas', 'officers', 90], ['#KP', 'kp', 80], ['Open', 'open', 95], ['PPL', 'ppl', 97], ['PML', 'pml', 97], ['Gap Progres', 'gap', 95], ['Final', 'final', 98]
   ] }
 ];
 
@@ -39,7 +39,7 @@ function displayValue(row, group, field) {
   if (field === 'name') return row.name;
   if (field === 'deadline') return row.deadline ? shortDate.format(dateOf(row.deadline)) : '—';
   const counts = row[group];
-  if (group === 'sls' || field === 'target' || field === 'officers' || field === 'open') return integer.format(counts[field]);
+  if (group === 'sls' || field === 'target' || field === 'officers' || field === 'open' || field === 'kp') return integer.format(counts[field] ?? 0);
   return percentage(progressValue(counts,field), counts.target, group === 'ub' ? 1 : 2);
 }
 
@@ -137,11 +137,11 @@ export async function exportReport(data, previous, comparisonStatus) {
       const colWidth = nominal * INNER / nominalWidth;
       const at = field === 'name' ? x + 12 : x + colWidth / 2;
       const align = field === 'name' ? 'left' : 'center';
-      const compare = Boolean(baseline && (group.key === 'nonUb' || group.key === 'ub') && !['officers', 'target', 'gap', 'open'].includes(field));
+      const compare = Boolean(baseline && (group.key === 'nonUb' || group.key === 'ub') && !['officers', 'target', 'gap', 'open', 'kp'].includes(field));
       const definitions = {
         ppl: ['all except', 'draft dan', 'open'],
         pml: ['completed, approved,', 'reject, reject admin,', 'revoked'],
-        final: ['COMPLETED', '+ APPROVED'],
+        final: group.key==='ub' ? ['COMPLETED', '+ APPROVED', '+ KP'] : ['COMPLETED', '+ APPROVED'],
         gap: ['PPL', 'dikurangi', 'PML'],
       };
       const details = ['nonUb','ub'].includes(group.key) ? definitions[field] : null;

@@ -15,13 +15,13 @@ import './app.css';
 
 const endpoint=(import.meta.env.VITE_APPS_SCRIPT_URL||'').trim();
 const cache='sumbar.pes.snapshot.v1';
-const types=[['sls','Progres SLS'],['nonUb','PES SE2026 - Non-UB'],['ub','PES SE2026 - UB']];
+const types=[['sls','Progres SLS'],['nonUb','PES SE2026 - Non-UB'],['ub','PES SE2026 - UB'],['kp','#KP - Rincian assignment UB']];
 const fmt=n=>Number(n).toLocaleString('id-ID');
 function check(x){
   if(!x || !/^\d{4}-\d{2}-\d{2}$/.test(x.date) || !/^\d{2}:\d{2}$/.test(x.time) || !Array.isArray(x.rows)||!x.rows.length || ![x.totals,...x.rows].every(r=>['sls','nonUb','ub'].every(k=>Number.isFinite(r?.[k]?.target)))) throw new Error('Format data tersimpan tidak sesuai.');
   const snapshot=structuredClone(x);
   for(const row of [...snapshot.rows,snapshot.totals]){
-    for(const category of ['nonUb','ub'])row[category].final=row[category].completed+(row[category].approved||0);
+    for(const category of ['nonUb','ub'])row[category].final=row[category].completed+(row[category].approved||0)+(row[category].kp||0);
   }
   return snapshot;
 }
@@ -50,7 +50,7 @@ function UploadDialog({close,apply}){
   useEffect(()=>{const dlg=ref.current;dlg.showModal();return ()=>dlg.close();},[]);
   async function submit(e){e.preventDefault();setBusy(true);setError('');
     try{if(draft){await apply(draft,key);close();}else{
-      if(types.some(([k])=>!files[k]))throw new Error('Pilih ketiga file CSV sebelum memeriksa data.');
+      if(types.some(([k])=>!files[k]))throw new Error('Pilih keempat file CSV sebelum memeriksa data.');
       const inputs=Object.fromEntries(await Promise.all(types.map(async ([k])=>[k,await files[k].text()])));
       setDraft(buildSnapshot(inputs,date,time));
     }}catch(err){setError(err.message);}finally{setBusy(false);}
@@ -58,10 +58,10 @@ function UploadDialog({close,apply}){
   return <dialog className="import-dialog" aria-labelledby="import-title" ref={ref} onCancel={e=>{if(e.target===ref.current){e.preventDefault();if(!busy)close();}}}>
     <header><span className="import-icon"><Upload size={21}/></span><button type="button" className="icon-close" disabled={busy} onClick={close} aria-label="Tutup"><X size={20}/></button></header>
     <h2 id="import-title">{draft?'Periksa hasil impor':'Perbarui progres'}</h2>
-    <p>{draft?'Pastikan target tiap sumber dan waktu laporan sudah sesuai.':'Pilih tiga ekspor CSV untuk satu waktu pelaporan.'}</p>
+    <p>{draft?'Pastikan target tiap sumber dan waktu laporan sudah sesuai.':'Pilih empat ekspor CSV untuk satu waktu pelaporan.'}</p>
     <form onSubmit={submit}>
     {draft?<><p className="import-date">{draft.date} - {draft.time} WIB - {draft.rows.length} wilayah</p>
-    <div className="import-review">{types.map(([k,label])=><div key={k}><span>{label}</span><strong>{fmt(draft.totals[k].target)} target</strong></div>)}</div>
+    <div className="import-review">{types.map(([k,label])=><div key={k}><span>{label}</span><strong>{k==='kp'?fmt(draft.totals.ub.kp)+' assignment KP':fmt(draft.totals[k].target)+' target'}</strong></div>)}</div>
     {endpoint&&<label className="import-field">Kunci admin<input required type="password" value={key} onChange={e=>setKey(e.target.value)} autoComplete="off"/></label>}
     <small>{endpoint?'Data akan tersimpan di Google Sheets.':'Mode lokal - Progres tersimpan di browser perangkat ini.'}</small></>:<>
     <div className="import-fields"><label className="import-field">Tanggal laporan<input required type="date" value={date} onChange={e=>setDate(e.target.value)}/></label><label className="import-field">Pukul (WIB)<input required type="time" value={time} onChange={e=>setTime(e.target.value)}/></label></div>

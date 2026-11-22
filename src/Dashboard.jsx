@@ -99,7 +99,7 @@ function Recap({data,previous,note}) {
   const labels={sls:'SLS',nonUb:'Non UB',ub:'UB'};
   const filteredRows=data.rows.filter(r=>(r.name+' '+r.code).toLocaleLowerCase('id').includes(query.trim().toLocaleLowerCase('id')));
   const columns=tab==='sls' ? [['target','Target'],['belum','Belum'],['sedang','Sedang'],['selesai','Selesai']] :
-    [['target','Target'],['officers','Petugas PPL'],['open','Open'],...(tab==='nonUb'?[['draft','Draf']]:[]),['ppl','Progres PPL'],['pml','Progres PML'],['gap','Gap Progres PPL-PML'],['final','Olah final']];
+    [['target','Target'],['officers','Petugas PPL'],['open','Open'],...(tab==='nonUb'?[['draft','Draf']]:[['kp','#KP']]),['ppl','Progres PPL'],['pml','Progres PML'],['gap','Gap Progres PPL-PML'],['final','Olah final']];
   const validKeys = new Set(['name','deadline',...columns.map(([k])=>k)]);
   const activeSort = sort.key && validKeys.has(sort.key) ? sort : {key:null,dir:null};
   const toggleSort = key => {
@@ -114,10 +114,10 @@ function Recap({data,previous,note}) {
     const dir = activeSort.dir === 'asc' ? 1 : -1;
     if (activeSort.key === 'name') return dir * a.name.localeCompare(b.name,'id');
     if (activeSort.key === 'deadline') return dir * a.deadline.localeCompare(b.deadline) || a.name.localeCompare(b.name,'id');
-    const isProgress = tab !== 'sls' && !['target','officers','open'].includes(activeSort.key);
+    const isProgress = tab !== 'sls' && !['target','officers','open','kp'].includes(activeSort.key);
     const val = row => {
       const g = row[tab];
-      if (!isProgress) return g[activeSort.key];
+      if (!isProgress) return g[activeSort.key] ?? 0;
       return g.target > 0 ? progressValue(g, activeSort.key) / g.target : null;
     };
     const va = val(a), vb = val(b);
@@ -134,7 +134,7 @@ function Recap({data,previous,note}) {
   };
   const byCode = new Map(previous?.rows.map(row=>[row.code,row]));
   const renderCells = (group, baseline, members) => columns.map(([key])=>{
-    const progress = tab !== 'sls' && !['target','officers','open'].includes(key);
+    const progress = tab !== 'sls' && !['target','officers','open','kp'].includes(key);
     const status = achievement(members,tab,key,data.date);
     const targetText = status ? percentage[tab].format(status.target) : '';
     return <td key={key} className={status ? (status.met?'achieved':'behind') : ''}
@@ -142,7 +142,7 @@ function Recap({data,previous,note}) {
       {progress ? <>{pct(progressValue(group,key),group.target,tab)}
         {key!=='gap' && <><br/><Delta label={baseline ? deltaLabel(group,baseline,key,tab) : '-'}/></>}
         {status&&<small className="achievement-label">{status.met?'Tercapai':'Di bawah'} - {targetText}</small>}
-      </> : integer.format(group[key])}</td>;
+      </> : integer.format(group[key] ?? 0)}</td>;
   });
   return <section id="rincian" className="panel recap"><div className="panel-head"><div><h2>Rincian kabupaten/kota</h2><p>{tab==='sls' ? 'Jumlah SLS menurut status pendataan' : 'Persentase progres terhadap target wilayah'}</p></div><label className="search"><Search size={16}/><input type="search" aria-label="Cari wilayah" placeholder="Cari wilayah…" value={query} onChange={e=>setQuery(e.target.value)}/></label></div>
     <div className="tabs" aria-label="Kategori rincian">{Object.keys(labels).map(k=><button key={k} type="button" aria-pressed={tab===k} onClick={()=>setTab(k)}>{labels[k]}</button>)}</div>

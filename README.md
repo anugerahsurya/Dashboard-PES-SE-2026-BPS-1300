@@ -1,6 +1,6 @@
 # Dashboard-PES-SE-2026-BPS-1300
 
-Dashboard React untuk Tim IT BPS Provinsi Sumatera Barat. Data awal berasal dari tiga CSV tanggal 14 November 2026. Admin memilih tiga berkas ekspor harian, memeriksa tanggal dan jam laporan (WIB), lalu menyimpan rekap. Gunakan tombol unduh PNG untuk membagikan laporan ke grup.
+Dashboard React untuk Tim IT BPS Provinsi Sumatera Barat. Data awal berasal dari tiga CSV tanggal 14 November 2026. Admin memilih empat berkas ekspor harian, memeriksa tanggal dan jam laporan (WIB), lalu menyimpan rekap. Gunakan tombol unduh PNG untuk membagikan laporan ke grup.
 
 ## Menjalankan situs
 
@@ -67,3 +67,11 @@ Status APPROVED BY Pengawas kini didukung. Total assignment mencakup seluruh sta
 Pasang Code.gs terbaru dan deploy versi baru sebelum mengunggah CSV dengan APPROVED. Tab laporan menyimpan hitungan APPROVED Non-UB dan UB pada AN dan AO. Laporan CSV 19 November 2026 pukul 16.37 WIB tersedia sebagai data bawaan. Dashboard menampilkan laporan dengan tanggal/jam terbaru antara data bawaan dan riwayat server, dan memberi keterangan jika data bawaan lebih baru. Unggah tiga CSV untuk menerbitkan snapshot ini ke riwayat Google Sheets.
 
 Acuan H-1 memilih waktu pengambilan laporan paling akhir pada tanggal sebelumnya. Unggah mundur dengan jam lebih awal tetap membuat tab laporan, sementara snapshot harian memakai waktu pengambilan terbesar. Open ditampilkan sebagai jumlah assignment pada tabel web dan PNG.
+
+## Unggah empat CSV dengan penyesuaian KP
+
+Pilih SLS, Non-UB, UB ringkasan status (misalnya UB - 24 November 2026 Final.csv), dan rincian KP UB (misalnya UB - 24 November 2026.csv). CSV keempat hanya menyumbangkan Wilayah dan TOTAL_ASSG_ADA_KP. Kolom KP_DI_CATATAN yang lain tidak dijumlahkan karena dapat menghitung assignment yang sama lebih dari sekali.
+
+Aplikasi mengurangi DRAFT UB sebanyak KP, menambah PPL/PML/final UB sebesar KP, dan mempertahankan COMPLETED asli serta total assignment. Field ub.kp mencatat penyesuaian sebagai status terpisah. Final UB = COMPLETED + APPROVED + KP. Draf pada snapshot sudah merupakan nilai setelah penyesuaian. Jika KP melebihi Draf atau ada wilayah hilang/duplikat, impor ditolak. Status historis tanpa kp tetap dihitung dengan kp = 0.
+
+Pasang Code.gs terbaru lalu deploy New version sebelum menyimpan laporan empat CSV. Tab laporan menyimpan #KP UB pada AR dan Draf UB sebelum penyesuaian pada AS. Tanggal dan jam laporan diisi admin agar sesuai waktu pengambilan, lalu snapshot mengikuti aturan acuan H-1 yang sama.

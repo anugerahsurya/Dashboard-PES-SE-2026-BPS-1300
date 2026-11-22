@@ -100,6 +100,23 @@ function readCounts(source, isSls, label) {
   return counts
 }
 
+function readKp(source) {
+  const [header,...rows] = readRows(source,'#KP');
+  if (!header || !rows.length) throw new Error('#KP: CSV kosong.');
+  const names=header.map(value=>value.trim().toUpperCase());
+  const codeIndex=names.indexOf('WILAYAH'), kpIndex=names.indexOf('TOTAL_ASSG_ADA_KP');
+  if(codeIndex<0 || kpIndex<0 || new Set(names).size!==names.length) throw new Error('#KP: perlu kolom Wilayah dan TOTAL_ASSG_ADA_KP yang unik.');
+  const result=new Map();
+  for(const row of rows){
+    const code=row[codeIndex],raw=row[kpIndex],value=Number(raw);
+    if(row.length!==header.length || !regions.some(([id])=>id===code) || result.has(code)) throw new Error('#KP: baris atau kode wilayah tidak valid/duplikat.');
+    if(!raw || !/^\d+(?:\.0+)?$/.test(raw) || !Number.isSafeInteger(value)) throw new Error('#KP: jumlah assignment harus bilangan bulat nonnegatif.');
+    result.set(code,value);
+  }
+  if(result.size!==regions.length) throw new Error('#KP: sembilan wilayah harus tersedia.');
+  return result;
+}
+
 function sumNumbers(values) {
   const result = values.reduce((sum, value) => sum + value, 0)
   if (!Number.isSafeInteger(result)) throw new Error('Jumlah melampaui batas bilangan bulat yang dapat disimpan.')
@@ -112,12 +129,13 @@ function assignment(status, officers) {
   return { ...status, target, officers, ppl: pml + status.submitted, pml, final: status.completed + status.approved }
 }
 
-export function buildSnapshot({ sls, nonUb, ub }, date, time) {
+export function buildSnapshot({ sls, nonUb, ub, kp }, date, time) {
   const stamp = new Date(date + 'T00:00:00Z')
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(stamp.getTime()) || stamp.toISOString().slice(0, 10) !== date) {
     throw new Error('Tanggal laporan tidak valid.')
   }
   if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) throw new Error('Jam laporan harus dalam format HH:mm WIB.')
+  const kpCounts=readKp(kp);
   const slsCounts = readCounts(sls, true, 'SLS')
   const nonUbCounts = readCounts(nonUb, false, 'PES SE2026')
   const ubCounts = readCounts(ub, false, 'PES SE2026 UB')
@@ -128,6 +146,12 @@ export function buildSnapshot({ sls, nonUb, ub }, date, time) {
   const rows = regions.map(([code, name, slsTarget, ubTarget, nonUbOfficers, ubOfficers, day]) => {
     const counts = slsCounts.get(code)
     const ubData = assignment(ubCounts.get(code), ubOfficers)
+    ubData.kp=kpCounts.get(code);
+    if(ubData.kp>ubData.draft) throw new Error('#KP '+name+': jumlah KP melebihi Draf UB. Periksa waktu ekspor kedua berkas.');
+    ubData.draft-=ubData.kp;
+    ubData.ppl+=ubData.kp;
+    ubData.pml+=ubData.kp;
+    ubData.final+=ubData.kp;
     if (sumNumbers(Object.values(counts)) !== slsTarget) throw new Error('SLS ' + name + ': jumlah status harus sesuai target ' + slsTarget + '.')
     if (ubData.target !== ubTarget) throw new Error('UB ' + name + ': jumlah status harus sesuai target ' + ubTarget + '. Periksa pilihan file UB.')
     return {
