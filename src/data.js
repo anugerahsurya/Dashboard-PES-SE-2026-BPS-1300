@@ -103,20 +103,32 @@ function readCounts(source, isSls, label) {
 }
 
 function readKp(source) {
-  const [header,...rows] = readRows(source,'#KP');
-  if (!header || !rows.length) throw new Error('#KP: CSV kosong.');
-  const names=header.map(value=>value.trim().toUpperCase());
-  const codeIndex=names.indexOf('WILAYAH'), kpIndex=names.indexOf('TOTAL_ASSG_ADA_KP');
-  if(codeIndex<0 || kpIndex<0 || new Set(names).size!==names.length) throw new Error('#KP: perlu kolom Wilayah dan TOTAL_ASSG_ADA_KP yang unik.');
-  const result=new Map();
-  for(const row of rows){
-    const code=row[codeIndex],raw=row[kpIndex],value=Number(raw);
-    if(row.length!==header.length || !regions.some(([id])=>id===code) || result.has(code)) throw new Error('#KP: baris atau kode wilayah tidak valid/duplikat.');
-    if(!raw || !/^\d+(?:\.0+)?$/.test(raw) || !Number.isSafeInteger(value)) throw new Error('#KP: jumlah assignment harus bilangan bulat nonnegatif.');
-    result.set(code,value);
+  const [header, ...rows] = readRows(source, '#KP')
+  if (!header || !rows.length) throw new Error('#KP: CSV kosong.')
+  const names = header.map(value => value.toLowerCase().replace(/\s+/g, ' '))
+  const codeIndex = names.indexOf('wilayah')
+  const kpIndex = names.indexOf('total_assg_ada_kp')
+  const statusIndex = names.indexOf('assignment_status_alias')
+  if (codeIndex < 0 || kpIndex < 0 || new Set(names).size !== names.length) {
+    throw new Error('#KP: perlu kolom Wilayah dan TOTAL_ASSG_ADA_KP yang unik.')
   }
-  if(result.size!==regions.length) throw new Error('#KP: sembilan wilayah harus tersedia.');
-  return result;
+  const result = new Map()
+  for (const row of rows) {
+    const code = row[codeIndex]
+    const raw = row[kpIndex]
+    const value = Number(raw)
+    const label = statusIndex === -1 ? 'draft' : row[statusIndex]?.toLowerCase().replace(/\s+/g, ' ')
+    if (row.length !== header.length || !regions.some(([id]) => id === code)) throw new Error('#KP: baris atau kode wilayah tidak valid.')
+    if (!Object.hasOwn(assignmentColumns, label)) throw new Error('#KP ' + code + ': status tidak dikenal: ' + (label || '(kosong)'))
+    if (!raw || !/^\d+(?:\.0+)?$/.test(raw) || !Number.isSafeInteger(value)) throw new Error('#KP: jumlah assignment harus bilangan bulat nonnegatif.')
+    if (!result.has(code)) result.set(code, new Map())
+    const statuses = result.get(code)
+    const status = assignmentColumns[label]
+    if (statuses.has(status)) throw new Error('#KP ' + code + ': status duplikat: ' + label)
+    statuses.set(status, value)
+  }
+  if (result.size !== regions.length) throw new Error('#KP: sembilan wilayah harus tersedia.')
+  return result
 }
 
 function sumNumbers(values) {
@@ -147,13 +159,30 @@ export function buildSnapshot({ sls, nonUb, ub, kp }, date, time) {
   if (sameAssignments) throw new Error('Data PES SE2026 dan PES SE2026 UB identik. Periksa kembali kedua file.')
   const rows = regions.map(([code, name, slsTarget, ubTarget, nonUbOfficers, ubOfficers, day]) => {
     const counts = slsCounts.get(code)
-    const ubData = assignment(ubCounts.get(code), ubOfficers)
-    ubData.kp=kpCounts.get(code);
-    if(ubData.kp>ubData.draft) throw new Error('#KP '+name+': jumlah KP melebihi Draf UB. Periksa waktu ekspor kedua berkas.');
-    ubData.draft-=ubData.kp;
-    ubData.ppl+=ubData.kp;
-    ubData.pml+=ubData.kp;
-    ubData.final+=ubData.kp;
+    const ubStatus = { ...ubCounts.get(code) }
+    const kpByStatus = kpCounts.get(code)
+    const finalStatuses = ['completed', 'completedByAdmin', 'approved']
+    let kpAlreadyFinal = 0
+    let moved = 0
+    for (const [status, count] of kpByStatus) {
+      if (count > ubStatus[status]) {
+        throw new Error('#KP ' + name + ': KP melebihi jumlah status ' + status + ' pada CSV UB. Periksa waktu ekspor kedua berkas.')
+      }
+      if (finalStatuses.includes(status)) {
+        kpAlreadyFinal += count
+      } else {
+        ubStatus[status] -= count
+        moved += count
+      }
+    }
+    const ubData = assignment(ubStatus, ubOfficers)
+    ubData.kp = moved + kpAlreadyFinal
+    ubData.kpAlreadyFinal = kpAlreadyFinal
+    ubData.kpFromDraft = kpByStatus.get('draft') ?? 0
+    ubData.target += moved
+    ubData.ppl += moved
+    ubData.pml += moved
+    ubData.final += moved
     if (sumNumbers(Object.values(counts)) !== slsTarget) throw new Error('SLS ' + name + ': jumlah status harus sesuai target ' + slsTarget + '.')
     if (ubData.target !== ubTarget) throw new Error('UB ' + name + ': jumlah status harus sesuai target ' + ubTarget + '. Periksa pilihan file UB.')
     return {

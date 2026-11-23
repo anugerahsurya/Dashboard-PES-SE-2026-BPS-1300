@@ -70,14 +70,14 @@ Acuan H-1 memilih waktu pengambilan laporan paling akhir pada tanggal sebelumnya
 
 ## Unggah empat CSV dengan penyesuaian KP
 
-Pilih SLS, Non-UB, UB ringkasan status (misalnya UB - 24 November 2026 Final.csv), dan rincian KP UB (misalnya UB - 24 November 2026.csv). CSV keempat hanya menyumbangkan Wilayah dan TOTAL_ASSG_ADA_KP. Kolom KP_DI_CATATAN yang lain tidak dijumlahkan karena dapat menghitung assignment yang sama lebih dari sekali.
+Pilih empat CSV: SLS, Non-UB, ringkasan status UB, dan Keterangan KP. File KP baru dibaca berdasarkan pasangan Wilayah dan assignment_status_alias. Angka KP diambil dari TOTAL_ASSG_ADA_KP; kolom KP_DI_CATATAN lainnya tidak dijumlahkan. File KP lama tanpa kolom status tetap diperlakukan sebagai KP dari Draf.
 
-Aplikasi mengurangi DRAFT UB sebanyak KP, menambah PPL/PML/final UB sebesar KP, dan mempertahankan COMPLETED asli serta total assignment. Field ub.kp mencatat penyesuaian sebagai status terpisah. Final UB = COMPLETED + APPROVED + KP. Draf pada snapshot sudah merupakan nilai setelah penyesuaian. Jika KP melebihi Draf atau ada wilayah hilang/duplikat, impor ditolak. Status historis tanpa kp tetap dihitung dengan kp = 0.
+KP yang belum final dikurangi dari status asalnya dan dipindahkan ke final. KP yang sudah final tetap terhitung sekali. Kolom #KP menampilkan seluruh assignment KP, termasuk yang sudah final. Total assignment tidak berubah. Impor menolak status atau wilayah yang tidak valid, pasangan wilayah-status ganda, dan KP yang melebihi jumlah status di ringkasan UB.
 
 Pasang Code.gs terbaru lalu deploy New version sebelum menyimpan laporan empat CSV. Tab laporan menyimpan #KP UB pada AR dan Draf UB sebelum penyesuaian pada AS. Tanggal dan jam laporan diisi admin agar sesuai waktu pengambilan, lalu snapshot mengikuti aturan acuan H-1 yang sama.
 
 ## Status Admin Kabupaten
 
-EDITED BY Admin Kabupaten masuk PPL dan PML, sedangkan COMPLETED BY Admin Kabupaten masuk PPL, PML, dan olah final. Final = COMPLETED Pengawas + COMPLETED Admin + APPROVED + KP (khusus UB). Kedua status admin disimpan terpisah agar jumlah assignment tetap dapat ditelusuri. Data historis yang belum memiliki kedua field menggunakan nol. Kolom AT:AW pada tab laporan menyimpan hitungan Edited dan Completed oleh Admin untuk Non-UB dan UB.
+EDITED BY Admin Kabupaten masuk PPL dan PML, sedangkan COMPLETED BY Admin Kabupaten masuk PPL, PML, dan olah final. Final = COMPLETED Pengawas + COMPLETED Admin + APPROVED + KP yang dipindahkan (khusus UB). Kedua status admin disimpan terpisah agar jumlah assignment tetap dapat ditelusuri. Data historis yang belum memiliki kedua field menggunakan nol. Kolom AT:AW pada tab laporan menyimpan hitungan Edited dan Completed oleh Admin untuk Non-UB dan UB.
 
 Perbarui Code.gs dan deploy New version sebelum menyimpan CSV dengan status admin tersebut.

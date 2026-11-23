@@ -67,13 +67,19 @@ function validGroup_(group, category) {
   const completedByAdmin = category === 'sls' ? 0 : (group.completedByAdmin === undefined ? 0 : group.completedByAdmin);
   if (!Number.isSafeInteger(editedByAdmin) || editedByAdmin < 0 || !Number.isSafeInteger(completedByAdmin) || completedByAdmin < 0) return false;
   const kp = category === 'ub' ? (group.kp === undefined ? 0 : group.kp) : 0;
-  if (!Number.isSafeInteger(kp) || kp < 0) return false;
+  const kpAlreadyFinal = group.kpAlreadyFinal === undefined ? 0 : group.kpAlreadyFinal;
+  const movedKp = kp - kpAlreadyFinal;
+  const kpFromDraft = group.kpFromDraft === undefined ? movedKp : group.kpFromDraft;
+  if (!Number.isSafeInteger(kp) || !Number.isSafeInteger(kpAlreadyFinal) ||
+      !Number.isSafeInteger(kpFromDraft) || kpAlreadyFinal < 0 || movedKp < 0 ||
+      kpFromDraft < 0 || kpFromDraft > movedKp ||
+      kpAlreadyFinal > (group.completed || 0) + completedByAdmin + approved) return false;
   if (!Number.isSafeInteger(approved) || approved < 0) return false;
   if (!Number.isSafeInteger(rejectedByAdmin) || rejectedByAdmin < 0) return false;
-  if (group.target !== statuses.reduce((sum, key) => sum + group[key], 0) + approved + rejectedByAdmin + kp + editedByAdmin + completedByAdmin) return false;
+  if (group.target !== statuses.reduce((sum, key) => sum + group[key], 0) + approved + rejectedByAdmin + movedKp + editedByAdmin + completedByAdmin) return false;
   if (category === 'sls') return true;
-  return ((kp === 0 && completedByAdmin === 0 && group.final === group.completed) || group.final === group.completed + completedByAdmin + approved + kp) &&
-    group.pml === group.completed + completedByAdmin + editedByAdmin + approved + kp + group.rejected + rejectedByAdmin + group.revoked &&
+  return ((kp === 0 && completedByAdmin === 0 && group.final === group.completed) || group.final === group.completed + completedByAdmin + approved + movedKp) &&
+    group.pml === group.completed + completedByAdmin + editedByAdmin + approved + movedKp + group.rejected + rejectedByAdmin + group.revoked &&
     group.ppl === group.pml + group.submitted;
 }
 
@@ -89,7 +95,7 @@ function validSnapshot_(s) {
   return categories.every(category => {
     const total = s.totals[category];
     if (!validGroup_(total, category)) return false;
-    return Object.keys(total).every(key => total[key] === s.rows.reduce((sum, row) => sum + (row[category][key] === undefined && (key === 'approved' || key === 'rejectedByAdmin' || key === 'kp' || key === 'editedByAdmin' || key === 'completedByAdmin') ? 0 : row[category][key]), 0));
+    return Object.keys(total).every(key => total[key] === s.rows.reduce((sum, row) => sum + (row[category][key] === undefined && (key === 'approved' || key === 'rejectedByAdmin' || key === 'kp' || key === 'kpAlreadyFinal' || key === 'kpFromDraft' || key === 'editedByAdmin' || key === 'completedByAdmin') ? 0 : row[category][key]), 0));
   });
 }
 
@@ -97,7 +103,7 @@ function normalizedSnapshot_(snapshot) {
   const copy = JSON.parse(JSON.stringify(snapshot));
   for (const row of copy.rows.concat(copy.totals)) {
     for (const group of ['nonUb', 'ub']) {
-      row[group].final = row[group].completed + (row[group].completedByAdmin || 0) + (row[group].approved || 0) + (row[group].kp || 0);
+      row[group].final = row[group].completed + (row[group].completedByAdmin || 0) + (row[group].approved || 0) + (row[group].kp || 0) - (row[group].kpAlreadyFinal || 0);
     }
   }
   return copy;
@@ -268,14 +274,14 @@ function writeReport_(snapshot) {
     sheet.getRange('X1').setValue('Progres PML Non UB (completed, approved, reject, reject admin, revoked)');
     sheet.getRange('AC1').setValue('Progres PML UB (completed, approved, reject, reject admin, revoked)');
     sheet.getRange('AR1:AS1').setValues([['#KP UB', 'DRAFT UB sebelum penyesuaian KP']]);
-    sheet.getRange('AR2:AS11').setValues(all.map(r=>[r.ub.kp || 0, r.ub.draft+(r.ub.kp || 0)]));
-    sheet.getRange('AD1').setValue('Progres Olah final UB (COMPLETED + APPROVED + KP)');
+    sheet.getRange('AR2:AS11').setValues(all.map(r=>[r.ub.kp || 0, r.ub.draft+(r.ub.kpFromDraft ?? r.ub.kp ?? 0)]));
+    sheet.getRange('AD1').setValue('Progres Olah final UB (COMPLETED + APPROVED + KP belum final)');
     sheet.getRange('AT1:AW1').setValues([['EDITED BY Admin Kab (Non-UB)', 'EDITED BY Admin Kab (UB)', 'COMPLETED BY Admin Kab (Non-UB)', 'COMPLETED BY Admin Kab (UB)']]);
     sheet.getRange('AT2:AW11').setValues(all.map(r=>[r.nonUb.editedByAdmin||0,r.ub.editedByAdmin||0,r.nonUb.completedByAdmin||0,r.ub.completedByAdmin||0]));
     sheet.getRange('X1').setValue('Progres PML Non UB (completed, approved, edited, reject, revoked; termasuk admin)');
     sheet.getRange('AC1').setValue('Progres PML UB (completed, approved, edited, reject, revoked; termasuk admin)');
     sheet.getRange('Y1').setValue('Olah final Non UB (COMPLETED Pengawas/Admin + APPROVED)');
-    sheet.getRange('AD1').setValue('Olah final UB (COMPLETED Pengawas/Admin + APPROVED + KP)');
+    sheet.getRange('AD1').setValue('Olah final UB (COMPLETED Pengawas/Admin + APPROVED + KP belum final)');
     const today = dateSerial_(snapshot.date);
     const day = today - dateSerial_('2026-11-01') + 1;
     const targets = [27,23];
