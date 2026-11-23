@@ -73,12 +73,16 @@ function validGroup_(group, category) {
   if (!Number.isSafeInteger(kp) || !Number.isSafeInteger(kpAlreadyFinal) ||
       !Number.isSafeInteger(kpFromDraft) || kpAlreadyFinal < 0 || movedKp < 0 ||
       kpFromDraft < 0 || kpFromDraft > movedKp ||
-      kpAlreadyFinal > (group.completed || 0) + completedByAdmin + approved) return false;
+      kpAlreadyFinal > (group.completed || 0) + completedByAdmin + editedByAdmin + approved) return false;
   if (!Number.isSafeInteger(approved) || approved < 0) return false;
   if (!Number.isSafeInteger(rejectedByAdmin) || rejectedByAdmin < 0) return false;
   if (group.target !== statuses.reduce((sum, key) => sum + group[key], 0) + approved + rejectedByAdmin + movedKp + editedByAdmin + completedByAdmin) return false;
   if (category === 'sls') return true;
-  return ((kp === 0 && completedByAdmin === 0 && group.final === group.completed) || group.final === group.completed + completedByAdmin + approved + movedKp) &&
+  const previousFinal = group.completed + completedByAdmin + approved + movedKp;
+  const validFinal = group.final === previousFinal + editedByAdmin ||
+    group.final === previousFinal ||
+    (kp === 0 && completedByAdmin === 0 && group.final === group.completed);
+  return validFinal &&
     group.pml === group.completed + completedByAdmin + editedByAdmin + approved + movedKp + group.rejected + rejectedByAdmin + group.revoked &&
     group.ppl === group.pml + group.submitted;
 }
@@ -101,9 +105,12 @@ function validSnapshot_(s) {
 
 function normalizedSnapshot_(snapshot) {
   const copy = JSON.parse(JSON.stringify(snapshot));
+  for (const row of copy.rows) {
+    if (row.deadline === '2026-11-23' && ['1307', '1309'].includes(row.code)) row.deadline = '2026-11-25';
+  }
   for (const row of copy.rows.concat(copy.totals)) {
     for (const group of ['nonUb', 'ub']) {
-      row[group].final = row[group].completed + (row[group].completedByAdmin || 0) + (row[group].approved || 0) + (row[group].kp || 0) - (row[group].kpAlreadyFinal || 0);
+      row[group].final = row[group].completed + (row[group].completedByAdmin || 0) + (row[group].editedByAdmin || 0) + (row[group].approved || 0) + (row[group].kp || 0) - (row[group].kpAlreadyFinal || 0);
     }
   }
   return copy;
@@ -208,8 +215,8 @@ function reportOrder_(template) {
     15:'open',16:'draft',17:'submitted by pencacah',18:'completed by pengawas',
     19:'rejected by pengawas',20:'revoked',21:'draft',25:'target ub',26:'jumlah ppl ub',
     30:'open',31:'draft',32:'submitted by pencacah',33:'completed by pengawas',34:'rejected',
-    36:'target 27 nov',37:'target 23 nov'};
-  if (!Object.keys(anchors).every(col => normalized_(rows[0][col]) === anchors[col]) ||
+    36:'target 27 nov',37:'target 25 nov'};
+  if (!Object.keys(anchors).every(col => normalized_(rows[0][col]) === anchors[col] || (Number(col) === 37 && normalized_(rows[0][col]) === 'target 23 nov')) ||
       normalized_(rows[10][0]) !== 'provinsi sumbar' || rows.some(r => r[38])) {
     throw new Error('Struktur template A1:AM11 berbeda dari lembar 14_11 14.00. Periksa template laporan.');
   }
@@ -280,17 +287,18 @@ function writeReport_(snapshot) {
     sheet.getRange('AT2:AW11').setValues(all.map(r=>[r.nonUb.editedByAdmin||0,r.ub.editedByAdmin||0,r.nonUb.completedByAdmin||0,r.ub.completedByAdmin||0]));
     sheet.getRange('X1').setValue('Progres PML Non UB (completed, approved, edited, reject, revoked; termasuk admin)');
     sheet.getRange('AC1').setValue('Progres PML UB (completed, approved, edited, reject, revoked; termasuk admin)');
-    sheet.getRange('Y1').setValue('Olah final Non UB (COMPLETED Pengawas/Admin + APPROVED)');
-    sheet.getRange('AD1').setValue('Olah final UB (COMPLETED Pengawas/Admin + APPROVED + KP belum final)');
+    sheet.getRange('Y1').setValue('Olah final Non UB (COMPLETED Pengawas/Admin + EDITED Admin + APPROVED)');
+    sheet.getRange('AD1').setValue('Olah final UB (COMPLETED Pengawas/Admin + EDITED Admin + APPROVED + KP belum final)');
     const today = dateSerial_(snapshot.date);
     const day = today - dateSerial_('2026-11-01') + 1;
-    const targets = [27,23];
+    const targets = [27, 25];
+    sheet.getRange('AL1').setValue('TARGET 25 NOV');
     const deadline = targets.map(d => dateSerial_('2026-11-' + d));
     sheet.getRange('AK2:AL7').setValues([deadline, [today,today], deadline.map(d => d-today),
       [day,day], targets.map(d => 1/d), targets.map(d => day/d)]);
     // AK8:AK9 dan AL8:AL9 adalah dua area gabungan pada template.
-    sheet.getRange('AK8').setValue((day-1)/27);
-    sheet.getRange('AL8').setValue((day-1)/23);
+    sheet.getRange('AK8').setValue((day-1)/targets[0]);
+    sheet.getRange('AL8').setValue((day-1)/targets[1]);
     SpreadsheetApp.flush();
     if (!existing) {
       sheet.setName(name);

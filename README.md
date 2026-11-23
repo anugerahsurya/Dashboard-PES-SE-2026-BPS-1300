@@ -78,6 +78,6 @@ Pasang Code.gs terbaru lalu deploy New version sebelum menyimpan laporan empat C
 
 ## Status Admin Kabupaten
 
-EDITED BY Admin Kabupaten masuk PPL dan PML, sedangkan COMPLETED BY Admin Kabupaten masuk PPL, PML, dan olah final. Final = COMPLETED Pengawas + COMPLETED Admin + APPROVED + KP yang dipindahkan (khusus UB). Kedua status admin disimpan terpisah agar jumlah assignment tetap dapat ditelusuri. Data historis yang belum memiliki kedua field menggunakan nol. Kolom AT:AW pada tab laporan menyimpan hitungan Edited dan Completed oleh Admin untuk Non-UB dan UB.
+EDITED dan COMPLETED BY Admin Kabupaten masuk PPL, PML, dan olah final. Final = COMPLETED Pengawas + COMPLETED Admin + EDITED Admin + APPROVED + KP yang dipindahkan (khusus UB). Kedua status admin disimpan terpisah agar jumlah assignment tetap dapat ditelusuri. Data historis yang belum memiliki kedua field menggunakan nol. Kolom AT:AW pada tab laporan menyimpan hitungan Edited dan Completed oleh Admin untuk Non-UB dan UB.
 
 Perbarui Code.gs dan deploy New version sebelum menyimpan CSV dengan status admin tersebut.

@@ -1,4 +1,4 @@
-import {achievement,progressValue} from './progress.js';
+import {achievement,progressValue,targetDeadlines} from './progress.js';
 import landscapeUrl from './landscape.svg';
 import { paceTarget } from './Pace.jsx';
 import { deltaLabel, previousDate } from './comparison.js';
@@ -50,7 +50,7 @@ export async function exportReport(data, previous, comparisonStatus) {
   const rows = [...data.rows, { name: 'Sumatera Barat', ...data.totals }];
   const headerTop = 306;
   const groupHeight = 54;
-  const labelHeight = 140;
+  const labelHeight = 154;
   const bodyTop = headerTop + groupHeight + labelHeight;
   const rowHeight = 88;
   const bodyBottom = bodyTop + rows.length * rowHeight;
@@ -141,7 +141,7 @@ export async function exportReport(data, previous, comparisonStatus) {
       const definitions = {
         ppl: ['all except', 'draft dan', 'open'],
         pml: ['completed, approved,', 'edited admin, reject,', 'revoked (incl. admin)'],
-        final: group.key==='ub' ? ['COMPLETED', '(Pengawas/Admin)', '+ APPROVED + KP pindah'] : ['COMPLETED', '(Pengawas/Admin)', '+ APPROVED'],
+        final: group.key==='ub' ? ['COMPLETED', '(Pengawas/Admin)', '+ EDITED Admin', '+ APPROVED + KP pindah'] : ['COMPLETED', '(Pengawas/Admin)', '+ EDITED Admin', '+ APPROVED'],
         gap: ['PPL', 'dikurangi', 'PML'],
       };
       const details = ['nonUb','ub'].includes(group.key) ? definitions[field] : null;
@@ -176,7 +176,7 @@ export async function exportReport(data, previous, comparisonStatus) {
   text('Target kumulatif hari ini', MARGIN, bodyBottom + 58, 29, ink, 730);
   const benchmarkY = bodyBottom + 82;
   const half = (INNER - 20) / 2;
-  ['2026-11-23', '2026-11-27'].forEach((deadline, index) => {
+  targetDeadlines.forEach((deadline, index) => {
     const left = MARGIN + index * (half + 20);
     box(left, benchmarkY, half, 76, '#efeee5', 12);
     text('Tenggat ' + shortDate.format(dateOf(deadline)), left + 20, benchmarkY + 46, 23, ink, 720);

@@ -3,8 +3,8 @@
 const regions = [
   ['1303', 'Kab. Solok', 27, 23, 21, 3, 27],
   ['1306', 'Kab. Padang Pariaman', 29, 29, 22, 4, 25],
-  ['1307', 'Kab. Agam', 28, 28, 21, 4, 23],
-  ['1309', 'Kab. Pasaman', 23, 26, 20, 4, 23],
+  ['1307', 'Kab. Agam', 28, 28, 21, 4, 25],
+  ['1309', 'Kab. Pasaman', 23, 26, 20, 4, 25],
   ['1312', 'Kab. Pasaman Barat', 29, 27, 21, 4, 25],
   ['1371', 'Kota Padang', 34, 44, 13, 6, 27],
   ['1372', 'Kota Solok', 23, 25, 16, 4, 27],
@@ -139,8 +139,9 @@ function sumNumbers(values) {
 
 function assignment(status, officers) {
   const target = sumNumbers(Object.values(status))
-  const pml = status.completed + status.completedByAdmin + status.editedByAdmin + status.approved + status.rejected + status.rejectedByAdmin + status.revoked
-  return { ...status, target, officers, ppl: pml + status.submitted, pml, final: status.completed + status.completedByAdmin + status.approved }
+  const final = status.completed + status.completedByAdmin + status.editedByAdmin + status.approved
+  const pml = final + status.rejected + status.rejectedByAdmin + status.revoked
+  return { ...status, target, officers, ppl: pml + status.submitted, pml, final }
 }
 
 export function buildSnapshot({ sls, nonUb, ub, kp }, date, time) {
@@ -161,7 +162,7 @@ export function buildSnapshot({ sls, nonUb, ub, kp }, date, time) {
     const counts = slsCounts.get(code)
     const ubStatus = { ...ubCounts.get(code) }
     const kpByStatus = kpCounts.get(code)
-    const finalStatuses = ['completed', 'completedByAdmin', 'approved']
+    const finalStatuses = ['completed', 'completedByAdmin', 'editedByAdmin', 'approved']
     let kpAlreadyFinal = 0
     let moved = 0
     for (const [status, count] of kpByStatus) {

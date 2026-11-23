@@ -20,8 +20,11 @@ const fmt=n=>Number(n).toLocaleString('id-ID');
 function check(x){
   if(!x || !/^\d{4}-\d{2}-\d{2}$/.test(x.date) || !/^\d{2}:\d{2}$/.test(x.time) || !Array.isArray(x.rows)||!x.rows.length || ![x.totals,...x.rows].every(r=>['sls','nonUb','ub'].every(k=>Number.isFinite(r?.[k]?.target)))) throw new Error('Format data tersimpan tidak sesuai.');
   const snapshot=structuredClone(x);
+  for(const row of snapshot.rows){
+    if (row.deadline==='2026-11-23' && ['1307','1309'].includes(row.code)) row.deadline='2026-11-25';
+  }
   for(const row of [...snapshot.rows,snapshot.totals]){
-    for(const category of ['nonUb','ub'])row[category].final=row[category].completed+(row[category].completedByAdmin||0)+(row[category].approved||0)+(row[category].kp||0)-(row[category].kpAlreadyFinal||0);
+    for(const category of ['nonUb','ub'])row[category].final=row[category].completed+(row[category].completedByAdmin||0)+(row[category].editedByAdmin||0)+(row[category].approved||0)+(row[category].kp||0)-(row[category].kpAlreadyFinal||0);
   }
   return snapshot;
 }
@@ -78,10 +81,11 @@ function readHistory(){
   return history;
 }
 function bundled(date){
-  return [initial,nov19,nov14,priorReport].find(report=>report.date===date) || null;
+  const report=[initial,nov19,nov14,priorReport].find(report=>report.date===date);
+  return report ? check(report) : null;
 }
 function App(){
- const [data,setData]=useState(initial),[open,setOpen]=useState(false),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[notice,setNotice]=useState('');
+ const [data,setData]=useState(()=>check(initial)),[open,setOpen]=useState(false),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[notice,setNotice]=useState('');
  const [fontsReady,setFontsReady]=useState(false),[artReady,setArtReady]=useState(false);
  const assetsReady=fontsReady&&artReady;
  const loadPercent=15+(fontsReady?15:0)+(artReady?15:0)+(!loading?55:0);
