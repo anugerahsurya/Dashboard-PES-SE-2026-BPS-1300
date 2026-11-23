@@ -21,7 +21,7 @@ function check(x){
   if(!x || !/^\d{4}-\d{2}-\d{2}$/.test(x.date) || !/^\d{2}:\d{2}$/.test(x.time) || !Array.isArray(x.rows)||!x.rows.length || ![x.totals,...x.rows].every(r=>['sls','nonUb','ub'].every(k=>Number.isFinite(r?.[k]?.target)))) throw new Error('Format data tersimpan tidak sesuai.');
   const snapshot=structuredClone(x);
   for(const row of [...snapshot.rows,snapshot.totals]){
-    for(const category of ['nonUb','ub'])row[category].final=row[category].completed+(row[category].approved||0)+(row[category].kp||0);
+    for(const category of ['nonUb','ub'])row[category].final=row[category].completed+(row[category].completedByAdmin||0)+(row[category].approved||0)+(row[category].kp||0);
   }
   return snapshot;
 }

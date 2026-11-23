@@ -1,7 +1,7 @@
 export const stageNotes = {
   ppl: 'all except draft dan open',
-  pml: 'completed, approved, reject, reject admin, revoked',
-  final: 'COMPLETED + APPROVED + KP (UB)',
+  pml: 'completed, approved, edited admin, reject, revoked (termasuk admin)',
+  final: 'COMPLETED (Pengawas/Admin) + APPROVED + KP (UB)',
   gap: 'PPL dikurangi PML',
 };
 
