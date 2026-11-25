@@ -49,6 +49,11 @@ export async function exportReport(data, previous, comparisonStatus) {
   const earlierRows = new Map(baseline?.rows.map(row => [row.code, row]) ?? []);
   const rows = [...data.rows, { name: 'Sumatera Barat', ...data.totals }];
   const completeCodes = new Set(data.rows.filter(isFinalComplete).map(row => row.code));
+  const deadlines = targetDeadlines(data.rows);
+  const visibleGroups = groups.map(group => ({
+    ...group,
+    columns: group.columns.filter(([,field]) => field !== 'deadline' || deadlines.length > 1),
+  }));
   const headerTop = 306;
   const groupHeight = 54;
   const labelHeight = 154;
@@ -136,9 +141,9 @@ export async function exportReport(data, previous, comparisonStatus) {
     box(MARGIN, y, INNER, rowHeight, total ? '#f4e3cb' : index % 2 ? '#f2f2eb' : '#ffffff');
     if (total) box(MARGIN, y, INNER, 2, '#d59a5e');
   });
-  const nominalWidth = groups.reduce((sum, group) => sum + group.columns.reduce((n, col) => n + col[2], 0), 0);
+  const nominalWidth = visibleGroups.reduce((sum, group) => sum + group.columns.reduce((n, col) => n + col[2], 0), 0);
   let x = MARGIN;
-  groups.forEach(group => {
+  visibleGroups.forEach(group => {
     const start = x;
     const width = group.columns.reduce((sum, col) => sum + col[2] * INNER / nominalWidth, 0);
     box(start, headerTop, width, groupHeight, group.tint);
@@ -188,7 +193,6 @@ export async function exportReport(data, previous, comparisonStatus) {
 
   text('Target kumulatif hari ini', MARGIN, bodyBottom + 58, 29, ink, 730);
   const benchmarkY = bodyBottom + 82;
-  const deadlines = targetDeadlines(data.rows);
   const cardWidth = (INNER - (deadlines.length - 1) * 20) / deadlines.length;
   deadlines.forEach((deadline, index) => {
     const left = MARGIN + index * (cardWidth + 20);
