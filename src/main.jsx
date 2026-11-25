@@ -13,8 +13,7 @@ import {exportReport} from './exportReport.js';
 import {previousDate} from './comparison.js';
 import './app.css';
 
-const endpoint=(import.meta.env.VITE_APPS_SCRIPT_URL||'').trim();
-const cache='sumbar.pes.snapshot.v1';
+const endpoint='/api/snapshots';
 const types=[['sls','Progres SLS'],['nonUb','PES SE2026 - Non-UB'],['ub','PES SE2026 - UB'],['kp','#KP - Rincian assignment UB']];
 const fmt=n=>Number(n).toLocaleString('id-ID');
 function check(x){
@@ -29,11 +28,17 @@ function check(x){
   return snapshot;
 }
 async function api(body, date){
-  const url=new URL(endpoint);
+  const url=new URL(endpoint,window.location.origin);
   if(date)url.searchParams.set('date',date);
-  const response=await fetch(url,body?{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body),signal:AbortSignal.timeout(45000)}:{cache:'no-store',signal:AbortSignal.timeout(10000)});
-  if(!response.ok)throw new Error('Server tidak dapat diakses. Periksa URL dan akses deployment.');
-  const result=await response.json();if(!result.ok)throw new Error(result.error||'Permintaan gagal.');return result;
+  let response;
+  try{
+    response=await fetch(url,body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(15000)}:{cache:'no-store',signal:AbortSignal.timeout(12000)});
+  }catch{
+    throw new Error('Koneksi ke server dashboard terputus. Coba lagi.');
+  }
+  const result=await response.json().catch(()=>null);
+  if(!response.ok||!result?.ok)throw new Error(result?.error||'Server dashboard belum dapat diakses.');
+  return result;
 }
 async function readSnapshot(date){
   try{return await api(undefined,date);}
@@ -65,20 +70,13 @@ function UploadDialog({close,apply}){
     <form onSubmit={submit}>
     {draft?<><p className="import-date">{draft.date} - {draft.time} WIB - {draft.rows.length} wilayah</p>
     <div className="import-review">{types.map(([k,label])=><div key={k}><span>{label}</span><strong>{k==='kp'?fmt(draft.totals.ub.kp)+' assignment KP':fmt(draft.totals[k].target)+' target'}</strong></div>)}</div>
-    {endpoint&&<label className="import-field">Kunci admin<input required type="password" value={key} onChange={e=>setKey(e.target.value)} autoComplete="off"/></label>}
-    <small>{endpoint?'Data akan tersimpan di Google Sheets.':'Mode lokal - Progres tersimpan di browser perangkat ini.'}</small></>:<>
+    <label className="import-field">Kunci admin<input required type="password" value={key} onChange={e=>setKey(e.target.value)} autoComplete="off"/></label>
+    <small>Rekap progres akan tersimpan di Supabase.</small></>:<>
     <div className="import-fields"><label className="import-field">Tanggal laporan<input required type="date" value={date} onChange={e=>setDate(e.target.value)}/></label><label className="import-field">Pukul (WIB)<input required type="time" value={time} onChange={e=>setTime(e.target.value)}/></label></div>
     {types.map(([k,label])=><label className="file-slot" key={k}><FileSpreadsheet size={22}/><span><b>{label}</b><small>{files[k]?.name||'Pilih file .csv'}</small></span>{files[k]&&<Check size={18}/>}<input aria-label={label} required={!files[k]} type="file" accept=".csv,text/csv" onChange={e=>setFiles({...files,[k]:e.target.files[0]})}/></label>)}</>}
     {error&&<p role="alert" className="import-error">{error}</p>}
     <footer>{draft&&<button type="button" disabled={busy} onClick={()=>{setDraft(null);setError('');}}><ArrowLeft size={16}/> Ubah</button>}<button className="primary-import" disabled={busy}>{busy&&<LoaderCircle className="import-spin" size={17}/>} {draft?'Simpan progres':'Periksa data'}</button></footer>
     </form></dialog>
-}
-const historyKey='sumbar.pes.daily.v1';
-function readHistory(){
-  const history=JSON.parse(localStorage.getItem(historyKey)||'{}');
-  const legacy=JSON.parse(localStorage.getItem(cache)||'null');
-  if(legacy && !history[legacy.date])history[legacy.date]=check(legacy);
-  return history;
 }
 function bundled(date){
   const report=[initial,nov19,nov14,priorReport].find(report=>report.date===date);
@@ -102,8 +100,7 @@ function App(){
    let alive=true;
    async function load(){
      try{
-       const history=endpoint?null:readHistory();
-       const stored=endpoint?(await api()).snapshot:history[Object.keys(history).sort().at(-1)];
+       const stored=(await api()).snapshot;
        if(stored && alive){
          const saved=check(stored);
          if(saved.date+' '+saved.time >= initial.date+' '+initial.time)setData(saved);
@@ -123,7 +120,7 @@ function App(){
    const date=previousDate(data.date);
    async function loadPrevious(){
      try{
-       const stored=endpoint?(await readSnapshot(date)).snapshot:readHistory()[date];
+       const stored=(await readSnapshot(date)).snapshot;
        const previous=stored?check(stored):bundled(date);
        if(previous && previous.date!==date)throw new Error('Tanggal acuan tidak sesuai.');
        if(alive)setComparison({date:data.date,previous,status:previous?'ready':'missing'});
@@ -134,19 +131,11 @@ function App(){
    return()=>{alive=false;};
  },[data,loading,comparisonAttempt]);
  async function apply(snapshot,adminKey){
-   if(endpoint){
-     const result=await api({adminKey,snapshot});
-     setData(check(result.snapshot));
-     setNotice(result.reportSheetName
-       ? 'Progres tersimpan. Tab laporan: ' + result.reportSheetName + '.'
-       : 'Progres berhasil disimpan ke Google Sheets.');
-   }else{
-     const history=readHistory();
-     if(!history[snapshot.date] || snapshot.time>=history[snapshot.date].time)history[snapshot.date]=snapshot;
-     localStorage.setItem(historyKey,JSON.stringify(history));
-     setData(check(history[snapshot.date]));
-     setNotice('Progres tersimpan di browser ini.');
-   }
+   const result=await api({adminKey,snapshot});
+   const saved=check(result.snapshot);
+   setData(current=>saved.date+' '+saved.time>=current.date+' '+current.time?saved:current);
+   setComparisonAttempt(value=>value+1);
+   setNotice('Progres berhasil disimpan ke Supabase.');
  }
  const current=comparison.date===data.date ? comparison : {previous:null,status:'loading'};
  async function download(){setBusy(true);try{await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));await exportReport(data,current.previous,current.status);}catch(e){setNotice(e.message);}finally{setBusy(false);}}
