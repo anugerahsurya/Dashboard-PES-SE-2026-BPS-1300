@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowDownToLine, ArrowUpFromLine, Building2, CalendarDays, ChevronDown, Clock3, Layers3, LoaderCircle, MapPin, Pause, Play, Search, Store } from 'lucide-react';
+import { ArrowDownToLine, ArrowUpFromLine, Building2, CalendarDays, ChevronDown, Clock3, Layers3, LoaderCircle, MapPin, Medal, Pause, Play, Search, Store } from 'lucide-react';
 import Pace from './Pace';
-import {achievement,stageNotes,progressValue} from './progress.js';
+import {achievement,isFinalComplete,stageNotes,progressValue} from './progress.js';
 import { deltaLabel, previousDate } from './comparison.js';
 import landscapeUrl from './landscape.svg';
 import './dashboard.css';
@@ -147,7 +147,13 @@ function Recap({data,previous,note}) {
   return <section id="rincian" className="panel recap"><div className="panel-head"><div><h2>Rincian kabupaten/kota</h2><p>{tab==='sls' ? 'Jumlah SLS menurut status pendataan' : 'Persentase progres terhadap target wilayah'}</p></div><label className="search"><Search size={16}/><input type="search" aria-label="Cari wilayah" placeholder="Cari wilayah…" value={query} onChange={e=>setQuery(e.target.value)}/></label></div>
     <div className="tabs" aria-label="Kategori rincian">{Object.keys(labels).map(k=><button key={k} type="button" aria-pressed={tab===k} onClick={()=>setTab(k)}>{labels[k]}</button>)}</div>
     {tab!=='sls' && <p className="recap-comparison">{note} Warna capaian mengikuti target kumulatif tenggat wilayah; rekap provinsi memakai target tertimbang.</p>}
-    <div className="table-scroll" tabIndex={0} role="region" aria-label="Tabel rincian wilayah"><table><thead><tr>{renderHeading('name','Kabupaten/kota')}{renderHeading('deadline','Target selesai')}{columns.map(([key,label])=>renderHeading(key,label,stageNotes[key]))}</tr></thead><tbody>{rows.map(r=><tr key={r.code}><th scope="row">{r.name}</th><td><span className={'deadline-badge deadline-'+r.deadline.slice(-2)}>{dateLabel(r.deadline,true)}</span></td>{renderCells(r[tab],byCode.get(r.code)?.[tab],[r])}</tr>)}
+    <div className="table-scroll" tabIndex={0} role="region" aria-label="Tabel rincian wilayah"><table><thead><tr>{renderHeading('name','Kabupaten/kota')}{renderHeading('deadline','Target selesai')}{columns.map(([key,label])=>renderHeading(key,label,stageNotes[key]))}</tr></thead><tbody>{rows.map(r=><tr key={r.code}>
+      <th scope="row">{r.name}{isFinalComplete(r) && <span className="completion-badge" title="Olah final UB dan Non-UB 100%">
+        <Medal aria-hidden="true" size={15}/> <span className="sr-only">Olah final UB dan Non-UB 100%</span>
+      </span>}</th>
+      <td><span className={'deadline-badge deadline-'+r.deadline.slice(-2)}>{dateLabel(r.deadline,true)}</span></td>
+      {renderCells(r[tab],byCode.get(r.code)?.[tab],[r])}
+    </tr>)}
     {!rows.length && <tr><td colSpan={columns.length+2} className="empty">Wilayah tidak ditemukan.</td></tr>}</tbody><tfoot><tr><th scope="row">Provinsi Sumatera Barat</th><td aria-label="Beragam">—</td>{renderCells(data.totals[tab],previous?.totals[tab],data.rows)}</tr></tfoot></table></div>
   </section>;
 }

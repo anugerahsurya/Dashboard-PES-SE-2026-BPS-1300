@@ -7,6 +7,7 @@
 .pace-item dd{font-size:21px;font-weight:650;letter-spacing:-.03em;margin:3px 0 0;font-variant-numeric:tabular-nums}
 @media(max-width:680px){.pace-groups{grid-template-columns:1fr;gap:10px}.pace-item{padding:12px 14px}}
 .pace-groups{gap:14px;margin-top:16px}
+.pace-item:only-child{grid-column:1/-1}
 .pace-item{position:relative;overflow:hidden;padding:15px 18px 17px;background:linear-gradient(120deg,#faf6ff,#f0e8f8);border-color:#e1d3ee;border-radius:12px;box-shadow:0 3px 10px #38224205}
 .pace-item[data-deadline="27"]{background:linear-gradient(120deg,#f1fafe,#e5f2f5);border-color:#cde1e9}
 .pace-card-heading{border-bottom:1px solid #77558f20;padding-bottom:10px}

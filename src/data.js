@@ -1,4 +1,6 @@
-// Urutan, target tetap, jumlah petugas, dan tenggat mengikuti lembar "14_11 14.00".
+import { reportingDeadline } from './progress.js';
+
+// Urutan, target tetap, jumlah petugas, dan tenggat dasar mengikuti lembar "14_11 14.00".
 // Kode wilayah adalah kunci penggabungan ketiga ekspor.
 const regions = [
   ['1303', 'Kab. Solok', 27, 23, 21, 3, 27],
@@ -187,7 +189,7 @@ export function buildSnapshot({ sls, nonUb, ub, kp }, date, time) {
     if (sumNumbers(Object.values(counts)) !== slsTarget) throw new Error('SLS ' + name + ': jumlah status harus sesuai target ' + slsTarget + '.')
     if (ubData.target !== ubTarget) throw new Error('UB ' + name + ': jumlah status harus sesuai target ' + ubTarget + '. Periksa pilihan file UB.')
     return {
-      code, name, deadline: '2026-11-' + day,
+      code, name, deadline: reportingDeadline({code, deadline: '2026-11-' + day}, date, time),
       sls: { ...counts, target: slsTarget },
       nonUb: assignment(nonUbCounts.get(code), nonUbOfficers),
       ub: ubData,

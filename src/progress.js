@@ -1,4 +1,19 @@
-export const targetDeadlines = ['2026-11-25', '2026-11-27'];
+// Kelima wilayah ini belum final di kedua kategori pada laporan 25 November 19.20 WIB.
+const extendedRegions = new Set(['1306', '1307', '1309', '1312', '1376']);
+
+export function reportingDeadline(row, date, time) {
+  if (extendedRegions.has(row.code) && date + 'T' + time >= '2026-11-25T19:20') return '2026-11-27';
+  if (row.deadline === '2026-11-23' && ['1307', '1309'].includes(row.code)) return '2026-11-25';
+  return row.deadline;
+}
+
+export function targetDeadlines(rows) {
+  return [...new Set(rows.map(row => row.deadline))].sort();
+}
+
+export function isFinalComplete(row) {
+  return [row.nonUb, row.ub].every(group => group.target > 0 && group.final === group.target);
+}
 
 export const stageNotes = {
   ppl: 'all except draft dan open',

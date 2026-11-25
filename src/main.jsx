@@ -11,6 +11,7 @@ import priorReport from './previous-report.json';
 import {buildSnapshot} from './data.js';
 import {exportReport} from './exportReport.js';
 import {previousDate} from './comparison.js';
+import {reportingDeadline} from './progress.js';
 import './app.css';
 
 const endpoint='/api/snapshots';
@@ -20,7 +21,7 @@ function check(x){
   if(!x || !/^\d{4}-\d{2}-\d{2}$/.test(x.date) || !/^\d{2}:\d{2}$/.test(x.time) || !Array.isArray(x.rows)||!x.rows.length || ![x.totals,...x.rows].every(r=>['sls','nonUb','ub'].every(k=>Number.isFinite(r?.[k]?.target)))) throw new Error('Format data tersimpan tidak sesuai.');
   const snapshot=structuredClone(x);
   for(const row of snapshot.rows){
-    if (row.deadline==='2026-11-23' && ['1307','1309'].includes(row.code)) row.deadline='2026-11-25';
+    row.deadline=reportingDeadline(row,snapshot.date,snapshot.time);
   }
   for(const row of [...snapshot.rows,snapshot.totals]){
     for(const category of ['nonUb','ub'])row[category].final=row[category].completed+(row[category].completedByAdmin||0)+(row[category].editedByAdmin||0)+(row[category].approved||0)+(row[category].kp||0)-(row[category].kpAlreadyFinal||0);

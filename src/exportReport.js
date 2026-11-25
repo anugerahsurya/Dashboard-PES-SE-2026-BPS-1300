@@ -1,4 +1,4 @@
-import {achievement,progressValue,targetDeadlines} from './progress.js';
+import {achievement,isFinalComplete,progressValue,targetDeadlines} from './progress.js';
 import landscapeUrl from './landscape.svg';
 import { paceTarget } from './Pace.jsx';
 import { deltaLabel, previousDate } from './comparison.js';
@@ -48,6 +48,7 @@ export async function exportReport(data, previous, comparisonStatus) {
   const baseline = comparisonStatus === 'ready' && previous?.date === yesterday ? previous : null;
   const earlierRows = new Map(baseline?.rows.map(row => [row.code, row]) ?? []);
   const rows = [...data.rows, { name: 'Sumatera Barat', ...data.totals }];
+  const completeCodes = new Set(data.rows.filter(isFinalComplete).map(row => row.code));
   const headerTop = 306;
   const groupHeight = 54;
   const labelHeight = 154;
@@ -78,6 +79,16 @@ export async function exportReport(data, previous, comparisonStatus) {
     ctx.font = weight + ' ' + size + 'px ' + font;
     ctx.textAlign = align;
     ctx.fillText(String(value), x, y, maxWidth);
+  }
+  function medal(x, y) {
+    box(x, y - 16, 32, 32, '#ffedbd', 16);
+    ctx.save();
+    ctx.translate(x + 4, y - 12);
+    ctx.strokeStyle = '#714e0b';
+    ctx.lineWidth = 1.6;
+    ctx.lineJoin = 'round';
+    ctx.stroke(new Path2D('M9 12 4 4h5l3 5 3-5h5l-5 8 M17 16a5 5 0 1 1-10 0 5 5 0 0 1 10 0Z'));
+    ctx.restore();
   }
 
   box(0, 0, WIDTH, height, page);
@@ -160,8 +171,10 @@ export async function exportReport(data, previous, comparisonStatus) {
           const colors = row.deadline.endsWith('23') ? ['#eee4f8','#6c4093'] : row.deadline.endsWith('27') ? ['#e1f0f6','#24627b'] : ['#fff0d6','#805a19'];
           box(x+5,centerY-17,colWidth-10,34,colors[0],5);
         }
-        text(displayValue(row, group.key, field), at, centerY + (compare ? -5 : 8), size,
-          status ? (status.met?'#245c3e':'#8a392d') : highlighted ? group.color : ink, total || highlighted ? 750 : field === 'name' ? 620 : 530, align, colWidth - 14);
+        const medalOffset = field === 'name' && completeCodes.has(row.code) ? 41 : 0;
+        if (medalOffset) medal(at, centerY);
+        text(displayValue(row, group.key, field), at + medalOffset, centerY + (compare ? -5 : 8), size,
+          status ? (status.met?'#245c3e':'#8a392d') : highlighted ? group.color : ink, total || highlighted ? 750 : field === 'name' ? 620 : 530, align, colWidth - 14 - medalOffset);
         if (compare) {
           const earlier = total ? baseline.totals : earlierRows.get(row.code);
           const delta = deltaLabel(row[group.key], earlier?.[group.key], field, group.key);
@@ -175,16 +188,22 @@ export async function exportReport(data, previous, comparisonStatus) {
 
   text('Target kumulatif hari ini', MARGIN, bodyBottom + 58, 29, ink, 730);
   const benchmarkY = bodyBottom + 82;
-  const half = (INNER - 20) / 2;
-  targetDeadlines.forEach((deadline, index) => {
-    const left = MARGIN + index * (half + 20);
-    box(left, benchmarkY, half, 76, '#efeee5', 12);
+  const deadlines = targetDeadlines(data.rows);
+  const cardWidth = (INNER - (deadlines.length - 1) * 20) / deadlines.length;
+  deadlines.forEach((deadline, index) => {
+    const left = MARGIN + index * (cardWidth + 20);
+    box(left, benchmarkY, cardWidth, 76, '#efeee5', 12);
     text('Tenggat ' + shortDate.format(dateOf(deadline)), left + 20, benchmarkY + 46, 23, ink, 720);
     const ppl = formatters[2].format(paceTarget(data.date, deadline, 'ppl'));
     const pml = formatters[2].format(paceTarget(data.date, deadline, 'pml'));
-    text('PPL   ' + ppl + '     ·     PML / Final   ' + pml, left + half - 20, benchmarkY + 46, 22, muted, 600, 'right');
+    text('PPL   ' + ppl + '     ·     PML / Final   ' + pml, left + cardWidth - 20, benchmarkY + 46, 22, muted, 600, 'right');
   });
   text('Hijau: mencapai target kumulatif. Merah: di bawah target. Rekap provinsi memakai target tertimbang wilayah.', MARGIN, bodyBottom+192, 19, muted);
+  if (completeCodes.size) {
+    const label = 'Olah final UB dan Non-UB 100%';
+    text(label, WIDTH - MARGIN, bodyBottom + 192, 19, muted, 550, 'right');
+    medal(WIDTH - MARGIN - ctx.measureText(label).width - 42, bodyBottom + 186);
+  }
   ctx.drawImage(mark, MARGIN, height - 60, 34, 34);
   text('Tim IT BPS Provinsi Sumatera Barat', MARGIN + 44, height - 34, 20, muted, 650);
   text(data.rows.length + ' kabupaten/kota', WIDTH - MARGIN, height - 34, 20, muted, 550, 'right');

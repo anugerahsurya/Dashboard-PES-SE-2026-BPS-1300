@@ -102,6 +102,7 @@ button,input,select{font:inherit}
 .recap .stage-note{display:block;white-space:normal;max-width:145px;margin-top:6px;font-size:11px;font-weight:450;line-height:1.5}
 .deadline-badge{display:inline-block;border-radius:6px;padding:5px 9px;background:#edf0f4;color:#45566a;font-size:12px;font-weight:650}
 .deadline-23{background:#f1e9fc;color:#6c4093}.deadline-27{background:#e4f2f7;color:#24627b}.deadline-25{background:#fff0d6;color:#805a19}
+.completion-badge{display:inline-flex;vertical-align:middle;margin-inline-start:6px;padding:4px;border-radius:50%;background:#ffedbd;color:#714e0b}
 .recap td.achieved{background:#eaf4ed;color:#245c3e}.recap td.behind{background:#fbece8;color:#8a392d}
 .recap .achievement-label{display:block;font-size:10px;color:inherit;margin-top:5px}
 .is-ready .bar-fill{transform-origin:left;animation:chart-fill 950ms var(--ease-out) both}
