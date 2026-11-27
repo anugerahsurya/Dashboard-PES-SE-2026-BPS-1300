@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ArrowDown, ArrowDownUp, ArrowUp, BarChart3, Building2, House, Store, Warehouse } from 'lucide-react';
 import { bkuStatuses, businessStatuses, familyStatuses, ubMetrics } from './exploration.js';
 import './exploration.css';
@@ -58,6 +59,44 @@ function FamilyComposition({ total }) {
 }
 
 function StatusChart({ rows, entries, independent }) {
+  const [tooltip, setTooltip] = useState(null);
+
+  useEffect(() => {
+    if (!tooltip) return;
+    const dismiss = () => setTooltip(null);
+    const onKey = event => {
+      if (event.key === 'Escape') dismiss();
+    };
+    const onOutsidePress = event => {
+      if (!tooltip.anchor.contains(event.target)) dismiss();
+    };
+    window.addEventListener('scroll', dismiss, true);
+    window.addEventListener('resize', dismiss);
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('pointerdown', onOutsidePress, true);
+    return () => {
+      window.removeEventListener('scroll', dismiss, true);
+      window.removeEventListener('resize', dismiss);
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('pointerdown', onOutsidePress, true);
+    };
+  }, [tooltip]);
+
+  function showTooltip(event, row, key, label, color) {
+    const anchor = event.currentTarget;
+    const bounds = anchor.getBoundingClientRect();
+    const viewportWidth = document.documentElement.clientWidth;
+    const width = Math.min(252, viewportWidth - 24);
+    const left = Math.max(12, Math.min(event.clientX - width / 2, viewportWidth - width - 12));
+    const above = bounds.top >= 144 || bounds.bottom > window.innerHeight / 2;
+    const top = above ? bounds.top - 9 : bounds.bottom + 9;
+    setTooltip({
+      anchor, left, top, width, above, label, color, region: row.name,
+      count: numbers.format(row.values[key]),
+      percent: share(row.values[key], row.total),
+    });
+  }
+
   return <div className="exploration-chart">
     <h3>{independent ? 'Indikator UB per kabupaten/kota' : 'Komposisi status per kabupaten/kota'}</h3>
     <Legend entries={entries} />
@@ -67,16 +106,35 @@ function StatusChart({ rows, entries, independent }) {
     <ul className="exploration-chart-rows">
       {rows.map(row => <li key={row.code} className={independent ? 'independent-bars' : undefined}>
         <span>{row.name}</span>
-        <div className="exploration-bars">
-          {row.total > 0 ? entries.map(([key, label, color]) => row.values[key] > 0 || independent ? (
+        <div className="exploration-bars" aria-hidden="true">
+          {row.total > 0 ? entries.map(([key, label, color]) => row.values[key] > 0 ? (
             <span key={key} className="exploration-segment"
               style={{ width: ratio(row.values[key], row.total) * 100 + '%', background: color }}
-              title={`${row.name} · ${label} · ${numbers.format(row.values[key])} (${share(row.values[key], row.total)})`} />
+              onPointerEnter={event => {
+                if (event.pointerType !== 'touch') showTooltip(event, row, key, label, color);
+              }}
+              onPointerLeave={event => {
+                if (event.pointerType !== 'touch') setTooltip(null);
+              }}
+              onPointerDown={event => {
+                if (event.pointerType === 'touch') showTooltip(event, row, key, label, color);
+              }} />
           ) : null) : <small>Tanpa data</small>}
         </div>
-        <span className="sr-only">{entries.map(([key, label]) => `${label} ${share(row.values[key], row.total)}`).join(', ')}</span>
+        <span className="sr-only">{row.total > 0
+          ? entries.map(([key, label]) => `${label} ${numbers.format(row.values[key])} (${share(row.values[key], row.total)})`).join(', ')
+          : 'Tanpa data'}</span>
       </li>)}
     </ul>
+    {tooltip && createPortal(
+      <div className={tooltip.above ? 'exploration-tooltip above' : 'exploration-tooltip'} role="tooltip"
+        style={{ left: tooltip.left, top: tooltip.top, width: tooltip.width }}>
+        <strong>{tooltip.region}</strong>
+        <span className="exploration-tooltip-status"><i style={{ background: tooltip.color }} />{tooltip.label}</span>
+        <div className="exploration-tooltip-values"><b>{tooltip.count}</b><span>{tooltip.percent}</span></div>
+      </div>,
+      document.body,
+    )}
   </div>;
 }
 
@@ -145,7 +203,7 @@ export default function Exploration({ data, dateLabel }) {
       {rows.length ? <>
         {category === 'ub' && entries.length > 0 && <p className="exploration-note">Persentase aktif dihitung dari total assignment UB.</p>}
         {entries.length > 0 && <div className={category === 'family' ? 'exploration-figures with-composition' : 'exploration-figures'}>
-          <StatusChart rows={rows} entries={entries} independent={category === 'ub'} />
+          <StatusChart key={category} rows={rows} entries={entries} independent={category === 'ub'} />
           {category === 'family' && <FamilyComposition total={total} />}
         </div>}
         <CountsTable key={category} rows={rows} total={total} entries={entries} category={categoryLabel} />
