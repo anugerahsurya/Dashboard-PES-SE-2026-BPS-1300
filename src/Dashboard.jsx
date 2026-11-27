@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowDownToLine, ArrowUpFromLine, Building2, ChevronDown, Layers3, LoaderCircle, MapPin, Medal, Pause, Play, Search, Store } from 'lucide-react';
+import { ArrowDownToLine, ArrowUpFromLine, Building2, ChevronDown, Layers3, LoaderCircle, MapPin, Medal, Pause, Play, RefreshCw, Search, Store } from 'lucide-react';
 import Pace from './Pace';
 import Exploration from './Exploration.jsx';
 import { progressRegionCodes } from './data.js';
@@ -161,7 +161,7 @@ function Recap({data,previous,note}) {
   </section>;
 }
 
-export default function Dashboard({data,onUpload,onExport,exporting,previous=null,comparisonStatus='missing',ready=true,onRetryComparison}) {
+export default function Dashboard({data,onUpload,onRefresh,refreshing,onExport,exporting,previous=null,comparisonStatus='missing',ready=true,onRetryComparison}) {
   const [paused,setPaused]=useState(false);
   const [progressChoice,setProgressChoice]=useState(null);
   const {totals,rows}=data;
@@ -172,7 +172,21 @@ export default function Dashboard({data,onUpload,onExport,exporting,previous=nul
   const baseline = comparisonStatus==='ready' ? previous : null;
   const note = comparisonNote(data.date,comparisonStatus)+(baseline ? ' Acuan pengambilan terakhir: '+baseline.time+' WIB.' : '');
   const finalChange = group => baseline ? deltaLabel(totals[group],baseline.totals[group],'final',group) : '—';
-  return <div className={ready?"pes-site is-ready":"pes-site is-loading"}><header className="site-header"><div className="header-inner"><a href="#ringkasan" className="brand" aria-label="PES Monitor, Ringkasan"><img className="brand-symbol" src="/pes-monitor.svg" alt=""/><strong>PES <span>Monitor</span></strong></a><span className="institution">BPS Provinsi Sumatera Barat</span><button type="button" onClick={onUpload} className="btn btn-upload"><ArrowUpFromLine size={16}/>Unggah CSV</button></div></header>
+  return <div className={ready?"pes-site is-ready":"pes-site is-loading"}>
+    <header className="site-header">
+      <div className="header-inner">
+        <a href="#ringkasan" className="brand" aria-label="PES Monitor, Ringkasan"><img className="brand-symbol" src="/pes-monitor.svg" alt=""/><strong>PES <span>Monitor</span></strong></a>
+        <span className="institution">BPS Provinsi Sumatera Barat</span>
+        <div className="header-actions">
+          <button type="button" onClick={onRefresh} disabled={!ready || refreshing} className="btn btn-refresh"
+            aria-label={refreshing ? 'Memuat ulang data' : 'Muat ulang data'} title="Muat ulang data">
+            <RefreshCw size={16} aria-hidden="true" className={refreshing ? 'pes-spin' : undefined}/>
+            <span>{refreshing ? 'Memuat…' : 'Muat ulang'}</span>
+          </button>
+          <button type="button" onClick={onUpload} disabled={refreshing} className="btn btn-upload"><ArrowUpFromLine size={16}/>Unggah CSV</button>
+        </div>
+      </div>
+    </header>
     <main className="pes-main" id="ringkasan">
       <section className={paused ? "hero exploration-hero paused" : "hero exploration-hero"}><img className="landscape" src={landscapeUrl} alt=""/><Weather/><button className="motion-toggle" type="button" onClick={()=>setPaused(!paused)} aria-label={paused?"Putar animasi ilustrasi":"Jeda animasi ilustrasi"}>{paused?<Play size={14}/>:<Pause size={14}/>}</button><div className="hero-copy"><div className="hero-location"><MapPin size={14}/>SUMATERA BARAT</div><h1>Eksplorasi <span>PES SE2026</span></h1><a className="hero-results-link" href="#eksplorasi">Lihat hasil pendataan <ChevronDown size={15} aria-hidden="true"/></a></div></section>
       <section className="progress-disclosure" aria-label="Progres pendataan">

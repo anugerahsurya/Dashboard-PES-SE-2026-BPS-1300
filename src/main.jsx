@@ -88,6 +88,7 @@ function bundled(date){
 }
 function App(){
  const [data,setData]=useState(()=>check(initial)),[open,setOpen]=useState(false),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[notice,setNotice]=useState('');
+ const [refreshing,setRefreshing]=useState(false);
  const [fontsReady,setFontsReady]=useState(false),[artReady,setArtReady]=useState(false);
  const assetsReady=fontsReady&&artReady;
  const loadPercent=15+(fontsReady?15:0)+(artReady?15:0)+(!loading?55:0);
@@ -141,6 +142,26 @@ function App(){
    setComparisonAttempt(value=>value+1);
    setNotice('Progres berhasil disimpan ke Supabase.');
  }
+ async function refresh(){
+   if(loading || refreshing || open)return;
+   setRefreshing(true);
+   setNotice('');
+   try{
+     const stored=(await api()).snapshot;
+     const saved=stored ? check(stored) : null;
+     if(!saved || saved.date+' '+saved.time < data.date+' '+data.time){
+       setNotice('Belum ada laporan tersimpan yang lebih baru.');
+       return;
+     }
+     if(JSON.stringify(saved)!==JSON.stringify(data))setData(saved);
+     setComparisonAttempt(value=>value+1);
+     setNotice('Laporan terbaru sudah dimuat.');
+   }catch{
+     setNotice('Gagal memuat ulang data. Coba lagi.');
+   }finally{
+     setRefreshing(false);
+   }
+ }
  const current=comparison.date===data.date ? comparison : {previous:null,status:'loading'};
  async function download(){setBusy(true);try{await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));await exportReport(data,current.previous,current.status);}catch(e){setNotice(e.message);}finally{setBusy(false);}}
  useEffect(()=>{
@@ -152,7 +173,7 @@ function App(){
      if(!loading && assetsReady)startup.remove();
    }
  },[loading,assetsReady,loadPercent]);
- return <><Dashboard onRetryComparison={()=>setComparisonAttempt(value=>value+1)} ready={!loading&&assetsReady} data={data} previous={current.previous} comparisonStatus={current.status} onUpload={()=>setOpen(true)} onExport={download} exporting={busy}/>{(loading||!assetsReady)&&<div className="app-loading" role="status"><div className="loading-content"><span>Memuat dashboard...</span><strong className="loading-percent">{loadPercent}%</strong><div className="loading-track" role="progressbar" aria-label="Memuat dashboard" aria-valuemin={0} aria-valuemax={100} aria-valuenow={loadPercent}><i style={{width:loadPercent+'%'}}/></div></div></div>}
+ return <><Dashboard onRetryComparison={()=>setComparisonAttempt(value=>value+1)} ready={!loading&&assetsReady} data={data} previous={current.previous} comparisonStatus={current.status} onUpload={()=>setOpen(true)} onRefresh={refresh} refreshing={refreshing} onExport={download} exporting={busy}/>{(loading||!assetsReady)&&<div className="app-loading" role="status"><div className="loading-content"><span>Memuat dashboard...</span><strong className="loading-percent">{loadPercent}%</strong><div className="loading-track" role="progressbar" aria-label="Memuat dashboard" aria-valuemin={0} aria-valuemax={100} aria-valuenow={loadPercent}><i style={{width:loadPercent+'%'}}/></div></div></div>}
  {notice&&<div className="app-notice" role="status">{notice}<button aria-label="Tutup pemberitahuan" onClick={()=>setNotice('')}><X size={16}/></button></div>}
  {open&&<UploadDialog close={()=>setOpen(false)} apply={apply}/>}</>
 }

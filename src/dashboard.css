@@ -13,7 +13,10 @@ button,input,select{font:inherit}
 .brand-symbol{display:block;width:41px;height:41px;flex:none}
 .institution{font-size:12px;font-weight:560;border-left:1px solid #d8dcd5;padding-left:19px;color:#626860}
 .pes-site .btn{border:1px solid #d7dbd3;background:white;display:inline-flex;align-items:center;justify-content:center;gap:8px;color:#343931;border-radius:8px;padding:9px 14px;min-height:40px;font-weight:640;font-size:13px;cursor:pointer;transition:transform 140ms var(--ease-out),background-color 150ms ease;white-space:nowrap}
-.btn-upload{margin-left:auto}
+.header-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+.pes-site .btn-refresh{width:128px}
+@media(hover:hover) and (pointer:fine){.btn-refresh:not(:disabled):hover{background:#f6f7f3}}
+@media(max-width:560px){.pes-site .btn-refresh{width:44px;padding-inline:0}.btn-refresh span{display:none}}
 .pes-site .btn-export{background:#f79039;border-color:#ec8731;color:#3d2616}
 .pes-site .btn:active{transform:scale(.97)}
 .pes-site :focus-visible{outline:3px solid #256d70;outline-offset:3px}
