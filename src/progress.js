@@ -15,6 +15,19 @@ export function isFinalComplete(row) {
   return [row.nonUb, row.ub].every(group => group.target > 0 && group.final === group.target);
 }
 
+export const assignmentColumns = {
+  open: 'open',
+  draft: 'draft',
+  'submitted by pencacah': 'submitted',
+  'completed by pengawas': 'completed',
+  'approved by pengawas': 'approved',
+  'edited by admin kabupaten': 'editedByAdmin',
+  'completed by admin kabupaten': 'completedByAdmin',
+  'rejected by pengawas': 'rejected',
+  'rejected by admin kabupaten': 'rejectedByAdmin',
+  'revoked by pengawas': 'revoked',
+};
+
 export const stageNotes = {
   ppl: 'all except draft dan open',
   pml: 'completed, approved, edited admin, reject, revoked (termasuk admin)',

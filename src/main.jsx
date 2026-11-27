@@ -8,20 +8,22 @@ import landscapeUrl from './landscape.svg';
 import nov19 from './report-nov19.json';
 import nov14 from './report-nov14.json';
 import priorReport from './previous-report.json';
-import {buildSnapshot} from './data.js';
+import {buildExplorationSnapshot,buildSnapshot,isProgressComplete} from './data.js';
 import {exportReport} from './exportReport.js';
 import {previousDate} from './comparison.js';
 import {reportingDeadline} from './progress.js';
 import './app.css';
 
 const endpoint='/api/snapshots';
-const types=[['sls','Progres SLS'],['nonUb','PES SE2026 - Non-UB'],['ub','PES SE2026 - UB'],['kp','CSV eksplorasi / #KP']];
+const combinedFile=['kp','CSV gabungan #KP dan eksplorasi'];
+const types=[['sls','Progres SLS'],['nonUb','PES SE2026 - Non-UB'],['ub','PES SE2026 - UB'],combinedFile];
 const fmt=n=>Number(n).toLocaleString('id-ID');
 function check(x){
   if(!x || !/^\d{4}-\d{2}-\d{2}$/.test(x.date) || !/^\d{2}:\d{2}$/.test(x.time) || !Array.isArray(x.rows)||!x.rows.length || ![x.totals,...x.rows].every(r=>['sls','nonUb','ub'].every(k=>Number.isFinite(r?.[k]?.target)))) throw new Error('Format data tersimpan tidak sesuai.');
   const snapshot=structuredClone(x);
+  const progress=snapshot.progressSource??snapshot;
   for(const row of snapshot.rows){
-    row.deadline=reportingDeadline(row,snapshot.date,snapshot.time);
+    row.deadline=reportingDeadline(row,progress.date,progress.time);
   }
   for(const row of [...snapshot.rows,snapshot.totals]){
     for(const category of ['nonUb','ub'])row[category].final=row[category].completed+(row[category].completedByAdmin||0)+(row[category].editedByAdmin||0)+(row[category].approved||0)+(row[category].kp||0)-(row[category].kpAlreadyFinal||0);
@@ -52,34 +54,39 @@ function wib(){
   const d=new Date(Date.now()+7*3600e3).toISOString();
   return [d.slice(0,10),d.slice(11,16)];
 }
-function UploadDialog({close,apply}){
+function UploadDialog({close,apply,data}){
   const ref=useRef(null);const [[day,hour]]=useState(wib);
   const [date,setDate]=useState(day),[time,setTime]=useState(hour),[files,setFiles]=useState({});
   const [draft,setDraft]=useState(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[key,setKey]=useState('');
+  const explorationOnly=isProgressComplete(data.rows);
+  const fields=explorationOnly?[combinedFile]:types;
+  const kpTotal=draft?.exploration?.[0]?.ub
+    ? draft.exploration.reduce((sum,row)=>sum+row.ub.kp,0)
+    : draft?.totals.ub.kp;
   useEffect(()=>{const dlg=ref.current;dlg.showModal();return ()=>dlg.close();},[]);
   async function submit(e){e.preventDefault();setBusy(true);setError('');
     try{if(draft){await apply(draft,key);close();}else{
-      if(types.some(([k])=>!files[k]))throw new Error('Pilih keempat file CSV sebelum memeriksa data.');
-      const inputs=Object.fromEntries(await Promise.all(types.map(async ([k])=>[k,await files[k].text()])));
-      if(files.kpDetail)inputs.kpDetail=await files.kpDetail.text();
-      setDraft(buildSnapshot(inputs,date,time));
+      if(fields.some(([k])=>!files[k]))throw new Error('Pilih semua CSV yang diminta sebelum memeriksa data.');
+      const inputs=Object.fromEntries(await Promise.all(fields.map(async ([k])=>[k,await files[k].text()])));
+      setDraft(explorationOnly?buildExplorationSnapshot(inputs.kp,date,time,data):buildSnapshot(inputs,date,time));
     }}catch(err){setError(err.message);}finally{setBusy(false);}
   }
   return <dialog className="import-dialog" aria-labelledby="import-title" ref={ref} onCancel={e=>{if(e.target===ref.current){e.preventDefault();if(!busy)close();}}}>
     <header><span className="import-icon"><Upload size={21}/></span><button type="button" className="icon-close" disabled={busy} onClick={close} aria-label="Tutup"><X size={20}/></button></header>
-    <h2 id="import-title">{draft?'Periksa hasil impor':'Perbarui progres'}</h2>
-    <p>{draft?'Pastikan target tiap sumber dan waktu laporan sudah sesuai.':'Pilih progres SLS, Non-UB, UB, dan CSV eksplorasi gabungan atau rincian #KP.'}</p>
+    <h2 id="import-title">{draft?'Periksa hasil impor':explorationOnly?'Perbarui eksplorasi':'Perbarui progres'}</h2>
+    <p>{draft?'Pastikan rekap dan waktu laporan sudah sesuai.':explorationOnly?'Unggah satu CSV gabungan #KP dan eksplorasi.':'Pilih progres SLS, Non-UB, UB, dan CSV gabungan #KP dan eksplorasi.'}</p>
     <form onSubmit={submit}>
     {draft?<><p className="import-date">{draft.date} - {draft.time} WIB - {draft.rows.length} wilayah</p>
-    <div className="import-review">{types.map(([k,label])=><div key={k}><span>{label}</span><strong>{k==='kp'?fmt(draft.totals.ub.kp)+' assignment KP':fmt(draft.totals[k].target)+' target'}</strong></div>)}
+    <div className="import-review">{!explorationOnly&&types.slice(0,3).map(([k,label])=><div key={k}><span>{label}</span><strong>{fmt(draft.totals[k].target)} target</strong></div>)}
+    <div><span>#KP UB</span><strong>{fmt(kpTotal)} assignment</strong></div>
     {draft.exploration&&<div><span>Eksplorasi hasil</span><strong>{draft.exploration.length} kabupaten/kota</strong></div>}</div>
     <label className="import-field">Kunci admin<input required type="password" value={key} onChange={e=>setKey(e.target.value)} autoComplete="off"/></label>
-    <small>Rekap progres akan tersimpan di Supabase.</small></>:<>
+    <small>{explorationOnly?'Rekap #KP dan eksplorasi':'Rekap progres'} akan tersimpan di Supabase.</small></>:<>
     <div className="import-fields"><label className="import-field">Tanggal laporan<input required type="date" value={date} onChange={e=>setDate(e.target.value)}/></label><label className="import-field">Pukul (WIB)<input required type="time" value={time} onChange={e=>setTime(e.target.value)}/></label></div>
-    {types.map(([k,label])=><label className="file-slot" key={k}><FileSpreadsheet size={22}/><span><b>{label}</b><small>{files[k]?.name||'Pilih file .csv'}</small></span>{files[k]&&<Check size={18}/>}<input aria-label={label} type="file" accept=".csv,text/csv" onChange={e=>setFiles({...files,[k]:e.target.files[0]})}/></label>)}
-    {files.kp&&<label className="file-slot"><FileSpreadsheet size={22}/><span><b>Rincian #KP per status</b><small>{files.kpDetail?.name||'Bila CSV gabungan memerlukan rincian'}</small></span>{files.kpDetail&&<Check size={18}/>}<input aria-label="Rincian #KP per status" type="file" accept=".csv,text/csv" onChange={e=>setFiles({...files,kpDetail:e.target.files[0]})}/></label>}</>}
+    {fields.map(([k,label])=><label className="file-slot" key={k}><FileSpreadsheet size={22}/><span><b>{label}</b><small>{files[k]?.name||'Pilih file .csv'}</small></span>{files[k]&&<Check size={18}/>}<input aria-label={label} type="file" accept=".csv,text/csv" onChange={e=>setFiles({...files,[k]:e.target.files[0]})}/></label>)}
+    </>}
     {error&&<p role="alert" className="import-error">{error}</p>}
-    <footer>{draft&&<button type="button" disabled={busy} onClick={()=>{setDraft(null);setError('');}}><ArrowLeft size={16}/> Ubah</button>}<button className="primary-import" disabled={busy}>{busy&&<LoaderCircle className="import-spin" size={17}/>} {draft?'Simpan progres':'Periksa data'}</button></footer>
+    <footer>{draft&&<button type="button" disabled={busy} onClick={()=>{setDraft(null);setError('');}}><ArrowLeft size={16}/> Ubah</button>}<button className="primary-import" disabled={busy}>{busy&&<LoaderCircle className="import-spin" size={17}/>} {draft?(explorationOnly?'Simpan eksplorasi':'Simpan progres'):'Periksa data'}</button></footer>
     </form></dialog>
 }
 function bundled(date){
@@ -101,6 +108,7 @@ function App(){
  },[]);
  const [comparisonAttempt,setComparisonAttempt]=useState(0);
  const [comparison,setComparison]=useState({date:null,previous:null,status:'loading'});
+ const progressDate=data.progressSource?.date??data.date;
  useEffect(()=>{
    let alive=true;
    async function load(){
@@ -122,25 +130,25 @@ function App(){
  useEffect(()=>{
    if(loading)return;
    let alive=true;
-   const date=previousDate(data.date);
+   const date=previousDate(progressDate);
    async function loadPrevious(){
      try{
        const stored=(await readSnapshot(date)).snapshot;
        const previous=stored?check(stored):bundled(date);
        if(previous && previous.date!==date)throw new Error('Tanggal acuan tidak sesuai.');
-       if(alive)setComparison({date:data.date,previous,status:previous?'ready':'missing'});
-     }catch{if(alive)setComparison({date:data.date,previous:null,status:'error'});}
+       if(alive)setComparison({date:progressDate,previous,status:previous?'ready':'missing'});
+     }catch{if(alive)setComparison({date:progressDate,previous:null,status:'error'});}
    }
-   setComparison({date:data.date,previous:null,status:'loading'});
+   setComparison({date:progressDate,previous:null,status:'loading'});
    loadPrevious();
    return()=>{alive=false;};
- },[data,loading,comparisonAttempt]);
+ },[progressDate,loading,comparisonAttempt]);
  async function apply(snapshot,adminKey){
    const result=await api({adminKey,snapshot});
    const saved=check(result.snapshot);
    setData(current=>saved.date+' '+saved.time>=current.date+' '+current.time?saved:current);
-   setComparisonAttempt(value=>value+1);
-   setNotice('Progres berhasil disimpan ke Supabase.');
+   if(!saved.progressSource)setComparisonAttempt(value=>value+1);
+   setNotice(saved.progressSource?'Eksplorasi berhasil disimpan ke Supabase.':'Progres berhasil disimpan ke Supabase.');
  }
  async function refresh(){
    if(loading || refreshing || open)return;
@@ -162,8 +170,8 @@ function App(){
      setRefreshing(false);
    }
  }
- const current=comparison.date===data.date ? comparison : {previous:null,status:'loading'};
- async function download(){setBusy(true);try{await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));await exportReport(data,current.previous,current.status);}catch(e){setNotice(e.message);}finally{setBusy(false);}}
+ const current=comparison.date===progressDate ? comparison : {previous:null,status:'loading'};
+ async function download(){setBusy(true);try{await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));await exportReport(data.progressSource?{...data,...data.progressSource}:data,current.previous,current.status);}catch(e){setNotice(e.message);}finally{setBusy(false);}}
  useEffect(()=>{
    const startup=document.getElementById('startup-loading');
    if(startup){
@@ -175,6 +183,6 @@ function App(){
  },[loading,assetsReady,loadPercent]);
  return <><Dashboard onRetryComparison={()=>setComparisonAttempt(value=>value+1)} ready={!loading&&assetsReady} data={data} previous={current.previous} comparisonStatus={current.status} onUpload={()=>setOpen(true)} onRefresh={refresh} refreshing={refreshing} onExport={download} exporting={busy}/>{(loading||!assetsReady)&&<div className="app-loading" role="status"><div className="loading-content"><span>Memuat dashboard...</span><strong className="loading-percent">{loadPercent}%</strong><div className="loading-track" role="progressbar" aria-label="Memuat dashboard" aria-valuemin={0} aria-valuemax={100} aria-valuenow={loadPercent}><i style={{width:loadPercent+'%'}}/></div></div></div>}
  {notice&&<div className="app-notice" role="status">{notice}<button aria-label="Tutup pemberitahuan" onClick={()=>setNotice('')}><X size={16}/></button></div>}
- {open&&<UploadDialog close={()=>setOpen(false)} apply={apply}/>}</>
+ {open&&<UploadDialog close={()=>setOpen(false)} apply={apply} data={data}/>}</>
 }
 createRoot(document.getElementById('root')).render(<App/>);

@@ -109,7 +109,8 @@ export default function Exploration({ data, dateLabel }) {
   const [category, setCategory] = useState('family');
   const [businessSource, setBusinessSource] = useState('household');
   const statusGroup = category === 'business' ? businessSource : category;
-  const entries = category === 'family' ? familyStatuses : category === 'business' ? businessStatuses : ubMetrics;
+  const entries = category === 'family' ? familyStatuses : category === 'business' ? businessStatuses :
+    ubMetrics.filter(([key]) => data.exploration?.[0]?.ub?.[key] !== undefined);
   const categoryLabel = categories.find(([key]) => key === category)[1];
   const rows = (data.exploration ?? []).flatMap(row => {
     const values = row[statusGroup];

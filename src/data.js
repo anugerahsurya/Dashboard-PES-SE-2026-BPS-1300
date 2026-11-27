@@ -1,4 +1,4 @@
-import { reportingDeadline } from './progress.js';
+import { assignmentColumns, isFinalComplete, reportingDeadline } from './progress.js';
 import { readExploration } from './exploration.js';
 
 // Urutan, target tetap, jumlah petugas, dan tenggat dasar mengikuti lembar "14_11 14.00".
@@ -17,19 +17,12 @@ const regions = [
 export const progressRegionCodes = regions.map(([code]) => code)
 
 const slsColumns = { belum: 'belum', sedang: 'sedang', selesai: 'selesai' }
-const assignmentColumns = {
-  open: 'open',
-  draft: 'draft',
-  'submitted by pencacah': 'submitted',
-  'completed by pengawas': 'completed',
-  'approved by pengawas': 'approved',
-  'edited by admin kabupaten': 'editedByAdmin',
-  'completed by admin kabupaten': 'completedByAdmin',
-  'rejected by pengawas': 'rejected',
-  'rejected by admin kabupaten': 'rejectedByAdmin',
-  'revoked by pengawas': 'revoked',
-}
 const finalStatuses = ['completed', 'completedByAdmin', 'editedByAdmin', 'approved']
+
+export function isProgressComplete(rows) {
+  return rows.length === progressRegionCodes.length &&
+    progressRegionCodes.every(code => rows.some(row => row.code === code && isFinalComplete(row)))
+}
 
 function readRows(source, label) {
   const text = String(source ?? '').replace(/^\uFEFF/, '').trim()
@@ -107,14 +100,13 @@ function readCounts(source, isSls, label) {
   return counts
 }
 
-function readKp(source, { requireStatus = false, allowPartial = false } = {}) {
+function readKp(source) {
   const [header, ...rows] = readRows(source, '#KP')
   if (!header || !rows.length) throw new Error('#KP: CSV kosong.')
   const names = header.map(value => value.toLowerCase().replace(/\s+/g, ' '))
   const codeIndex = names.indexOf('wilayah')
   const kpIndex = names.indexOf('total_assg_ada_kp')
   const statusIndex = names.indexOf('assignment_status_alias')
-  if (requireStatus && statusIndex < 0) throw new Error('Rincian #KP harus memuat kolom assignment_status_alias.')
   if (codeIndex < 0 || kpIndex < 0 || new Set(names).size !== names.length) {
     throw new Error('#KP: perlu kolom Wilayah dan TOTAL_ASSG_ADA_KP yang unik.')
   }
@@ -133,7 +125,7 @@ function readKp(source, { requireStatus = false, allowPartial = false } = {}) {
     if (statuses.has(status)) throw new Error('#KP ' + code + ': status duplikat: ' + label)
     statuses.set(status, value)
   }
-  if (!allowPartial && result.size !== regions.length) throw new Error('#KP: sembilan wilayah harus tersedia.')
+  if (result.size !== regions.length) throw new Error('#KP: sembilan wilayah harus tersedia.')
   return result
 }
 
@@ -162,7 +154,7 @@ function inferKp(code, status, total) {
     const min = Math.max(0, total - (target - capacity))
     const max = Math.min(total, capacity)
     if (min !== max) {
-      throw new Error('#KP ' + code + ': unggah rincian KP per status assignment. Total pada CSV gabungan masih bisa berasal dari beberapa status UB.')
+      throw new Error('#KP ' + code + ': gunakan CSV gabungan yang memuat kolom UB #KP per Status.')
     }
     if (key !== 'final') inferred.set(key, min)
     else inferred.set('alreadyFinal', min)
@@ -170,22 +162,45 @@ function inferKp(code, status, total) {
   return inferred
 }
 
-export function buildSnapshot({ sls, nonUb, ub, kp, kpDetail }, date, time) {
+function validateReportStamp(date, time) {
   const stamp = new Date(date + 'T00:00:00Z')
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(stamp.getTime()) || stamp.toISOString().slice(0, 10) !== date) {
     throw new Error('Tanggal laporan tidak valid.')
   }
   if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) throw new Error('Jam laporan harus dalam format HH:mm WIB.')
-  const monitoring = readRows(kp, 'CSV eksplorasi / #KP')
-  const exploration = monitoring[0]?.some(name => name.toLowerCase() === 'kab/kot')
-    ? readExploration(monitoring[0], monitoring.slice(1), progressRegionCodes)
+}
+
+function readMonitoring(source) {
+  const [header, ...rows] = readRows(source, 'CSV eksplorasi / #KP')
+  return header?.some(name => name.toLowerCase() === 'kab/kot')
+    ? readExploration(header, rows, progressRegionCodes)
     : null
-  const hasUbMonitoring = exploration?.get(progressRegionCodes[0]).ub !== undefined
-  const kpCounts = exploration
-    ? (kpDetail ? readKp(kpDetail, { requireStatus: true, allowPartial: hasUbMonitoring }) : null)
-    : readKp(kp)
-  if (exploration && !hasUbMonitoring && !kpCounts) {
-    throw new Error('CSV eksplorasi ini belum memuat total #KP UB. Unggah juga rincian KP per status assignment.')
+}
+
+export function buildExplorationSnapshot(source, date, time, completed) {
+  validateReportStamp(date, time)
+  if (!isProgressComplete(completed.rows)) throw new Error('Seluruh kabupaten/kota harus mencapai 100% olah final sebelum unggah eksplorasi saja.')
+  const progressSource = completed.progressSource ?? { date: completed.date, time: completed.time }
+  if (date + 'T' + time < progressSource.date + 'T' + progressSource.time) {
+    throw new Error('Waktu eksplorasi harus sama atau lebih baru dari laporan progres final.')
+  }
+  const monitoring = readMonitoring(source)
+  if (!monitoring?.get(progressRegionCodes[0]).ub?.kpByStatus) {
+    throw new Error('Gunakan CSV gabungan eksplorasi yang memuat kolom UB #KP per Status.')
+  }
+  return {
+    date, time, progressSource,
+    rows: completed.rows, totals: completed.totals,
+    exploration: progressRegionCodes.map(code => monitoring.get(code)),
+  }
+}
+
+export function buildSnapshot({ sls, nonUb, ub, kp }, date, time) {
+  validateReportStamp(date, time)
+  const exploration = readMonitoring(kp)
+  const kpCounts = exploration ? null : readKp(kp)
+  if (exploration && !exploration.get(progressRegionCodes[0]).ub) {
+    throw new Error('Gunakan CSV gabungan eksplorasi yang memuat total #KP UB dan UB #KP per Status.')
   }
   const slsCounts = readCounts(sls, true, 'SLS')
   const nonUbCounts = readCounts(nonUb, false, 'PES SE2026')
@@ -201,7 +216,9 @@ export function buildSnapshot({ sls, nonUb, ub, kp, kpDetail }, date, time) {
     if (ubMonitoring && ubMonitoring.total !== sumNumbers(Object.values(ubStatus))) {
       throw new Error('UB ' + name + ': total assignment pada CSV eksplorasi berbeda dari CSV progres UB.')
     }
-    const kpByStatus = kpCounts?.get(code) ?? inferKp(code, ubStatus, ubMonitoring.kp)
+    const kpByStatus = kpCounts?.get(code) ?? (ubMonitoring.kpByStatus
+      ? new Map(Object.entries(ubMonitoring.kpByStatus))
+      : inferKp(code, ubStatus, ubMonitoring.kp))
     if (ubMonitoring && ubMonitoring.kp !== sumNumbers([...kpByStatus.values()])) {
       throw new Error('#KP ' + name + ': total rincian berbeda dari CSV eksplorasi. Periksa waktu ekspor.')
     }

@@ -1,5 +1,5 @@
 import { validExploration } from './exploration.js';
-import { progressRegionCodes } from './data.js';
+import { isProgressComplete, progressRegionCodes } from './data.js';
 
 export function validDate(date) {
   if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
@@ -55,7 +55,13 @@ export function validSnapshot(s) {
     if (!row || !expected.delete(row.code) || typeof row.name !== 'string' || !row.name.trim() || !validDate(row.deadline)) return false;
     if (!categories.every(category => validGroup(row[category], category))) return false;
   }
-  if (s.exploration?.some(({ code, ub }) => {
+  if (s.progressSource !== undefined) {
+    const source = s.progressSource;
+    if (!source || !validDate(source.date) || typeof source.time !== 'string' ||
+      !/^([01]\d|2[0-3]):[0-5]\d$/.test(source.time) || Object.keys(source).length !== 2 ||
+      source.date + 'T' + source.time > s.date + 'T' + s.time ||
+      !isProgressComplete(s.rows) || !s.exploration?.every(row => row.ub?.kpByStatus)) return false;
+  } else if (s.exploration?.some(({ code, ub }) => {
     const progress = s.rows.find(row => row.code === code).ub;
     return ub && (ub.total !== progress.target || ub.kp !== (progress.kp ?? 0));
   })) return false;

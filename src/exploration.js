@@ -1,3 +1,5 @@
+import { assignmentColumns } from './progress.js';
+
 export const familyStatuses = [
   ['0', 'Tidak ditemukan (STOP)', '#ac303b'],
   ['1', 'Ditemukan', '#387760'],
@@ -29,6 +31,7 @@ const ubHeaders = {
   kp: 'ub ada #kp',
   unentered: 'ub belum entri root',
 };
+const kpStatusHeader = 'ub #kp per status';
 const statusGroups = [
   ['family', 'kk', familyStatuses],
   ['bang', 'usaha (bang=1)', businessStatuses],
@@ -48,11 +51,14 @@ export function readExploration(header, records, codes) {
     }),
   ]);
   const ubColumns = Object.entries(ubHeaders).map(([key, name]) => [key, names.indexOf(name)]);
-  if (ubColumns.some(([, index]) => index >= 0)) {
-    if (ubColumns.some(([, index]) => index < 0 || names.lastIndexOf(names[index]) !== index)) {
-      throw new Error('CSV eksplorasi memerlukan empat kolom UB yang unik.');
+  const kpStatusIndex = names.indexOf(kpStatusHeader);
+  if (ubColumns.some(([, index]) => index >= 0) || kpStatusIndex >= 0) {
+    if (ubColumns.some(([key, index]) => (index < 0 && key !== 'active') ||
+      (index >= 0 && names.lastIndexOf(names[index]) !== index)) ||
+      (kpStatusIndex >= 0 && names.lastIndexOf(kpStatusHeader) !== kpStatusIndex)) {
+      throw new Error('CSV eksplorasi memerlukan kolom Total Assignment, Ada #KP, dan Belum Entri Root yang unik untuk UB.');
     }
-    columns.push(['ub', ubColumns]);
+    columns.push(['ub', ubColumns.filter(([, index]) => index >= 0)]);
   }
   const seen = new Set();
   const rows = records.map(record => {
@@ -61,7 +67,7 @@ export function readExploration(header, records, codes) {
       throw new Error('Baris CSV eksplorasi tidak valid untuk wilayah ' + (code || '(kosong)') + '.');
     }
     seen.add(code);
-    return {
+    const row = {
       code,
       ...Object.fromEntries(columns.map(([group, fields]) => [group, Object.fromEntries(fields.map(([key, index]) => {
         const raw = record[index];
@@ -72,9 +78,31 @@ export function readExploration(header, records, codes) {
         return [key, value];
       }))])),
     };
+    if (kpStatusIndex >= 0) row.ub.kpByStatus = parseKpBreakdown(record[kpStatusIndex], code, row.ub.kp);
+    return row;
   });
   if (!validExploration(rows, codes)) throw new Error('Cakupan wilayah atau rekap jumlah pada CSV eksplorasi tidak valid.');
   return new Map(rows.map(row => [row.code, row]));
+}
+
+function parseKpBreakdown(raw, code, total) {
+  const values = {};
+  if (!/^(?:'?-|–|—)?$/.test(raw)) {
+    for (const entry of raw.split('|')) {
+      const match = /^(.+):\s*(\d+)\s*$/.exec(entry.trim());
+      const label = match?.[1].trim().toLowerCase().replace(/\s+/g, ' ');
+      const count = Number(match?.[2]);
+      if (!Object.hasOwn(assignmentColumns, label) || !Number.isSafeInteger(count) ||
+        Object.hasOwn(values, assignmentColumns[label])) {
+        throw new Error('#KP ' + code + ': status, jumlah, atau pengulangan pada rincian KP tidak valid.');
+      }
+      values[assignmentColumns[label]] = count;
+    }
+  }
+  if (Object.values(values).reduce((sum, count) => sum + count, 0) !== total) {
+    throw new Error('#KP ' + code + ': jumlah per status harus sama dengan UB Ada #KP.');
+  }
+  return values;
 }
 
 export function validExploration(rows, codes) {
@@ -82,14 +110,22 @@ export function validExploration(rows, codes) {
   const remaining = new Set(codes);
   const withUb = rows[0]?.ub !== undefined;
   const groups = statusGroups.map(([group, , statuses]) => [group, statuses.map(([code]) => code)]);
-  if (withUb) groups.push(['ub', Object.keys(ubHeaders)]);
-  const validCounts = (counts, keys) => counts && Object.keys(counts).length === keys.length &&
+  const withActive = withUb && rows[0].ub?.active !== undefined;
+  const withBreakdown = withUb && rows[0].ub?.kpByStatus !== undefined;
+  const ubKeys = Object.keys(ubHeaders).filter(key => key !== 'active' || withActive);
+  if (withUb) groups.push(['ub', ubKeys]);
+  const statuses = new Set(Object.values(assignmentColumns));
+  const validBreakdown = (counts, total) => counts && typeof counts === 'object' && !Array.isArray(counts) &&
+    Object.entries(counts).every(([key, count]) => statuses.has(key) && Number.isSafeInteger(count) && count >= 0) &&
+    Object.values(counts).reduce((sum, count) => sum + count, 0) === total;
+  const validCounts = (counts, keys, extra) => counts && Object.keys(counts).length === keys.length + extra &&
     keys.every(key => Number.isSafeInteger(counts[key]) && counts[key] >= 0) &&
     Number.isSafeInteger(keys.reduce((sum, key) => sum + counts[key], 0));
   return rows.every(row => row && remaining.delete(row.code) &&
     Object.keys(row).length === groups.length + 1 &&
-    groups.every(([group, keys]) => validCounts(row[group], keys)) &&
-    (!withUb || ubMetrics.every(([key]) => row.ub[key] <= row.ub.total))) &&
+    groups.every(([group, keys]) => validCounts(row[group], keys, group === 'ub' && withBreakdown ? 1 : 0)) &&
+    (!withUb || (ubKeys.every(key => row.ub[key] <= row.ub.total) &&
+      (!withBreakdown || validBreakdown(row.ub.kpByStatus, row.ub.kp))))) &&
     groups.every(([group, keys]) => Number.isSafeInteger(rows.reduce((sum, row) =>
       keys.reduce((total, key) => total + row[group][key], sum), 0)));
 }

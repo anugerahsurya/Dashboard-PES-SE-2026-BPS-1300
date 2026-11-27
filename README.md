@@ -1,6 +1,6 @@
 # Dashboard PES SE2026 Sumatera Barat
 
-Dashboard React untuk Tim IT BPS Provinsi Sumatera Barat. Admin mengunggah empat CSV, memeriksa hasil impor, lalu menyimpan dengan kunci admin. Laporan dapat diunduh sebagai PNG.
+Dashboard React untuk Tim IT BPS Provinsi Sumatera Barat. Admin memeriksa hasil impor CSV dan menyimpannya dengan kunci admin. Laporan progres dapat diunduh sebagai PNG.
 
 ## Menjalankan dan menerapkan dashboard
 
@@ -18,12 +18,13 @@ API Vercel menerima rekap agregat hasil pengolahan CSV. API memvalidasi kunci ad
 | SLS | Kode wilayah, BELUM, SEDANG, dan SELESAI |
 | PES SE2026 Non-UB | Ringkasan status assignment Non-UB |
 | PES SE2026 UB | Ringkasan status assignment UB |
-| CSV eksplorasi / #KP | Ekspor SQL Lab dengan Kab/Kot, status KK, Usaha (Bang=1), Usaha (Nama KK), dan indikator UB. Slot ini juga menerima CSV Keterangan KP lama |
-| Rincian #KP per status | Wilayah, assignment_status_alias, dan TOTAL_ASSG_ADA_KP. Tambahkan jika total #KP pada CSV eksplorasi belum cukup untuk menentukan status asal berdasarkan CSV progres UB |
+| CSV gabungan #KP dan eksplorasi | Ekspor SQL Lab dengan Kab/Kot, status KK, Usaha (Bang=1), Usaha (Nama KK), UB Total Assignment, UB Ada #KP, UB Belum Entri Root, dan UB #KP per Status |
 
 Dashboard mencocokkan kabupaten/kota berdasarkan kode wilayah. KP yang belum final dipindahkan dari status asal ke PPL, PML, dan olah final. KP yang sudah final dihitung sekali. EDITED dan COMPLETED BY Admin Kabupaten masuk PPL, PML, dan olah final. APPROVED juga masuk olah final.
 
-CSV eksplorasi tersimpan bersama snapshot progres. Tab Keluarga menampilkan komposisi status dan kelompok pemutakhiran provinsi. Tab Usaha keluarga menyediakan pilihan sumber Nama KK dan Bang=1. Tab UB menampilkan aktif, ada #KP, dan belum entri root sebagai proporsi dari total assignment. Indikator tersebut dapat tumpang tindih.
+Selama olah final masih berjalan, formulir menampilkan empat input. Setelah UB dan Non-UB mencapai 100% di setiap kabupaten/kota peserta, formulir hanya meminta CSV gabungan. Unggahan berikutnya memperbarui eksplorasi dan #KP dengan tanggal baru. Panel progres, delta H−1, dan unduhan PNG memakai pengambilan progres final.
+
+Tab Keluarga menampilkan komposisi dan kelompok pemutakhiran provinsi. Tab Usaha keluarga menyediakan pilihan sumber Nama KK dan Bang=1. Indikator UB ditampilkan sebagai proporsi dari total assignment. Kolom aktif tampil bila tersedia di CSV.
 
 ## Riwayat laporan
 
