@@ -1,21 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowDown, ArrowDownUp, ArrowUp, BarChart3, Building2, House, Store, Warehouse } from 'lucide-react';
-import { bkuStatuses, businessStatuses, familyStatuses, ubMetrics } from './exploration.js';
+import { ArrowDown, ArrowDownToLine, ArrowDownUp, ArrowUp, BarChart3, Building2, House, LoaderCircle, Store, Warehouse } from 'lucide-react';
+import { explorationView, explorationViews, familyComposition } from './exploration.js';
 import './exploration.css';
 
-const categories = [
-  ['family', 'Keluarga', House],
-  ['business', 'Usaha keluarga', Store],
-  ['bku', 'Usaha BKU', Warehouse],
-  ['ub', 'UB', Building2],
-];
-const views = {
-  family: ['family', familyStatuses],
-  business: ['household', businessStatuses],
-  bku: ['bang', bkuStatuses],
-  ub: ['ub', ubMetrics],
-};
+const categoryIcons = { family: House, business: Store, bku: Warehouse, ub: Building2 };
 const numbers = new Intl.NumberFormat('id-ID');
 const percentages = new Intl.NumberFormat('id-ID', { style: 'percent', maximumFractionDigits: 2 });
 const ratio = (count, total) => total > 0 ? count / total : 0;
@@ -28,14 +17,7 @@ function Legend({ entries }) {
 }
 
 function FamilyComposition({ total }) {
-  const found = total.values['1'];
-  const newFamilies = total.values['2'];
-  const other = total.total - found - newFamilies;
-  const segments = [
-    ['Ditemukan', found, '#387760'],
-    ['Baru', newFamilies, '#e58b3d'],
-    ['Tidak eligible (gabungan)', other, '#ac303b'],
-  ];
+  const segments = familyComposition(total);
   let end = 0;
   const fill = segments.map(([, count, color]) => {
     const start = end;
@@ -174,21 +156,22 @@ function CountsTable({ rows, total, entries, category }) {
 
 export default function Exploration({ data, dateLabel }) {
   const [category, setCategory] = useState('family');
-  const [statusGroup, statuses] = views[category];
-  const available = data.exploration?.[0]?.[statusGroup];
-  const entries = statuses.filter(([key]) => available?.[key] !== undefined);
-  const categoryLabel = categories.find(([key]) => key === category)[1];
-  const rows = (data.exploration ?? []).flatMap(row => {
-    const values = row[statusGroup];
-    const region = data.rows.find(item => item.code === row.code);
-    if (!values || !region) return [];
-    const total = category === 'ub' ? values.total : entries.reduce((sum, [key]) => sum + values[key], 0);
-    return [{ code: row.code, name: region.name, values, total }];
-  });
-  const total = {
-    total: rows.reduce((sum, row) => sum + row.total, 0),
-    values: Object.fromEntries(entries.map(([key]) => [key, rows.reduce((sum, row) => sum + row.values[key], 0)])),
-  };
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
+  const { label: categoryLabel, entries, rows, total } = explorationView(data, category);
+
+  async function downloadPdf() {
+    setExporting(true);
+    setExportError('');
+    try {
+      const { exportExploration } = await import('./exportExploration.js');
+      await exportExploration(data);
+    } catch {
+      setExportError('PDF eksplorasi gagal dibuat. Coba lagi.');
+    } finally {
+      setExporting(false);
+    }
+  }
   return <section className="exploration panel" id="eksplorasi" aria-labelledby="exploration-title">
     <div className="exploration-heading">
       <div><h2 id="exploration-title">Eksplorasi hasil</h2><p>Status pendataan {numbers.format(data.rows.length)} kabupaten/kota peserta PES SE2026</p></div>
@@ -196,11 +179,17 @@ export default function Exploration({ data, dateLabel }) {
     </div>
     <div className="exploration-controls">
       <div className="exploration-tabs" role="group" aria-label="Kategori eksplorasi">
-        {categories.map(([key, label, Icon]) => <button type="button" key={key} aria-pressed={category === key} aria-controls="exploration-content" onClick={() => setCategory(key)}>
-          <Icon size={17} aria-hidden="true" />{label}
+        {Object.entries(categoryIcons).map(([key, Icon]) => <button type="button" key={key} aria-pressed={category === key} aria-controls="exploration-content" onClick={() => setCategory(key)}>
+          <Icon size={17} aria-hidden="true" />{explorationViews[key].label}
         </button>)}
       </div>
+      {data.exploration?.length > 0 &&
+        <button type="button" className="btn btn-export" onClick={downloadPdf} disabled={exporting}>
+          {exporting ? <LoaderCircle size={16} className="pes-spin" aria-hidden="true" /> : <ArrowDownToLine size={16} aria-hidden="true" />}
+          {exporting ? 'Menyiapkan PDF…' : 'Unduh PDF'}
+        </button>}
     </div>
+    {exportError && <p role="alert" className="exploration-export-error">{exportError}</p>}
     <div id="exploration-content">
       {rows.length ? <>
         {category === 'ub' && entries.length > 0 && <p className="exploration-note">Persentase aktif dihitung dari total assignment UB.</p>}

@@ -22,7 +22,7 @@ const percentage = (n, target, digits) => target ? formatters[digits].format(n /
 // Widths are measured in layout pixels before scaling up the exported bitmap.
 const groups = [
   { key: 'area', label: 'Wilayah', tint: '#ebece5', color: '#4a584d', columns: [
-    ['Kabupaten/kota', 'name', 247], ['Tenggat', 'deadline', 96]
+    ['Kabupaten/kota', 'name', 304], ['Tenggat', 'deadline', 96]
   ] },
   { key: 'sls', label: 'Status SLS', tint: '#e0ede5', color: '#35634d', columns: [
     ['Target', 'target', 76], ['Belum', 'belum', 75], ['Sedang', 'sedang', 78], ['Selesai', 'selesai', 79]
@@ -94,6 +94,22 @@ export async function exportReport(data, previous, comparisonStatus) {
     ctx.lineJoin = 'round';
     ctx.stroke(new Path2D('M9 12 4 4h5l3 5 3-5h5l-5 8 M17 16a5 5 0 1 1-10 0 5 5 0 0 1 10 0Z'));
     ctx.restore();
+  }
+  function districtName(name, left, centerY, available, weight) {
+    ctx.font = weight + ' 23px ' + font;
+    if (ctx.measureText(name).width <= available) {
+      text(name, left, centerY + 8, 23, ink, weight);
+      return;
+    }
+    const words = name.split(' ');
+    let split = 1;
+    while (split < words.length - 1 && ctx.measureText(words.slice(0, split + 1).join(' ')).width <= available) split++;
+    if (words.length === 1) {
+      text(name, left, centerY + 8, 23, ink, weight, 'left', available);
+      return;
+    }
+    text(words.slice(0, split).join(' '), left, centerY - 4, 23, ink, weight, 'left', available);
+    text(words.slice(split).join(' '), left, centerY + 24, 23, ink, weight, 'left', available);
   }
 
   box(0, 0, WIDTH, height, page);
@@ -167,8 +183,13 @@ export async function exportReport(data, previous, comparisonStatus) {
       rows.forEach((row, idx) => {
         const total = idx === rows.length - 1;
         const highlighted = field === 'final' || field === 'selesai';
-        const size = field === 'name' ? 23 : 24;
         const centerY = bodyTop + (idx + 0.5) * rowHeight;
+        if (field === 'name') {
+          const badgeSpace = completeCodes.size ? 46 : 0;
+          districtName(row.name, at, centerY, colWidth - 24 - badgeSpace, total ? 750 : 620);
+          if (completeCodes.has(row.code)) medal(x + colWidth - 42, centerY);
+          return;
+        }
         const members = total ? data.rows : [row];
         const status = achievement(members,group.key,field,data.date);
         if(status)box(x+3,bodyTop+idx*rowHeight+3,colWidth-6,rowHeight-6,status.met?'#e3f1e6':'#f9e5df',5);
@@ -176,10 +197,8 @@ export async function exportReport(data, previous, comparisonStatus) {
           const colors = row.deadline.endsWith('23') ? ['#eee4f8','#6c4093'] : row.deadline.endsWith('27') ? ['#e1f0f6','#24627b'] : ['#fff0d6','#805a19'];
           box(x+5,centerY-17,colWidth-10,34,colors[0],5);
         }
-        const medalOffset = field === 'name' && completeCodes.has(row.code) ? 41 : 0;
-        if (medalOffset) medal(at, centerY);
-        text(displayValue(row, group.key, field), at + medalOffset, centerY + (compare ? -5 : 8), size,
-          status ? (status.met?'#245c3e':'#8a392d') : highlighted ? group.color : ink, total || highlighted ? 750 : field === 'name' ? 620 : 530, align, colWidth - 14 - medalOffset);
+        text(displayValue(row, group.key, field), at, centerY + (compare ? -5 : 8), 24,
+          status ? (status.met?'#245c3e':'#8a392d') : highlighted ? group.color : ink, total || highlighted ? 750 : 530, align, colWidth - 14);
         if (compare) {
           const earlier = total ? baseline.totals : earlierRows.get(row.code);
           const delta = deltaLabel(row[group.key], earlier?.[group.key], field, group.key);

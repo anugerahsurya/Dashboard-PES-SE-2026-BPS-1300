@@ -24,6 +24,41 @@ export const ubMetrics = [
   ['active', 'Keberadaan 1 (Aktif)', '#387760'],
 ];
 
+export const explorationViews = {
+  family: { group: 'family', label: 'Keluarga', statuses: familyStatuses },
+  business: { group: 'household', label: 'Usaha keluarga', statuses: businessStatuses },
+  bku: { group: 'bang', label: 'Usaha BKU', statuses: bkuStatuses },
+  ub: { group: 'ub', label: 'UB', statuses: ubMetrics },
+};
+
+export function explorationView(data, category) {
+  const { group, label, statuses } = explorationViews[category];
+  const available = data.exploration?.[0]?.[group];
+  const entries = statuses.filter(([key]) => available?.[key] !== undefined);
+  const rows = (data.exploration ?? []).flatMap(row => {
+    const values = row[group];
+    const region = data.rows.find(item => item.code === row.code);
+    if (!values || !region) return [];
+    const total = category === 'ub' ? values.total : entries.reduce((sum, [key]) => sum + values[key], 0);
+    return [{ code: row.code, name: region.name, values, total }];
+  });
+  const total = {
+    total: rows.reduce((sum, row) => sum + row.total, 0),
+    values: Object.fromEntries(entries.map(([key]) => [key, rows.reduce((sum, row) => sum + row.values[key], 0)])),
+  };
+  return { label, entries, rows, total };
+}
+
+export function familyComposition(total) {
+  const found = total.values['1'];
+  const newFamilies = total.values['2'];
+  return [
+    ['Ditemukan', found, '#387760'],
+    ['Baru', newFamilies, '#e58b3d'],
+    ['Tidak eligible (gabungan)', total.total - found - newFamilies, '#ac303b'],
+  ];
+}
+
 const ubHeaders = {
   total: 'ub total assignment',
   active: 'ub keberadaan 1 (aktif)',

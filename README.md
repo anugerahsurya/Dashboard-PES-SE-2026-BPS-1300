@@ -1,6 +1,6 @@
 # Dashboard PES SE2026 Sumatera Barat
 
-Dashboard React untuk Tim IT BPS Provinsi Sumatera Barat. Admin memeriksa hasil impor CSV dan menyimpannya dengan kunci admin. Laporan progres dapat diunduh sebagai PNG.
+Dashboard React untuk Tim IT BPS Provinsi Sumatera Barat. Admin memeriksa hasil impor CSV dan menyimpannya dengan kunci admin. Laporan progres dapat diunduh sebagai PNG dan hasil eksplorasi sebagai PDF lanskap.
 
 ## Menjalankan dan menerapkan dashboard
 
