@@ -97,11 +97,11 @@
   color: #743d1d;
   background: #fffaf2;
 }
-.exploration-figures { display: grid; gap: 14px; margin-top: 3px; }
+.exploration-figures { display: grid; align-items: start; gap: 12px; margin-top: 3px; }
 .exploration-figures.with-composition { grid-template-columns: minmax(0, 2.1fr) minmax(245px, 1fr); }
 .exploration-chart, .exploration-composition {
   min-width: 0;
-  padding: 18px;
+  padding: 16px;
   border: 1px solid #e5e7df;
   border-radius: 12px;
   background: #fdfdfb;
@@ -116,7 +116,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 6px 13px;
-  margin: 12px 0;
+  margin: 10px 0;
   font-size: 11px;
   color: #444b42;
 }
@@ -188,12 +188,19 @@
 .independent-bars .exploration-segment { height: 4px; border-radius: 2px; }
 @keyframes exploration-reveal { from { opacity: .45; } to { opacity: 1; } }
 .exploration-composition { background: #fff9f0; border-color: #efe4d1; }
+.exploration-composition-body {
+  display: grid;
+  grid-template-columns: minmax(78px, 32%) minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0 8px;
+}
 .exploration-ring {
   display: grid;
   place-items: center;
-  width: min(150px, 75%);
+  width: min(108px, 100%);
   aspect-ratio: 1;
-  margin: 14px auto;
+  margin-inline: auto;
   border-radius: 50%;
   background: #ebe7dc;
 }
@@ -206,20 +213,22 @@
   background: #fff9f0;
   text-align: center;
 }
-.exploration-ring strong { font-size: 24px; letter-spacing: -.045em; }
-.exploration-ring small { font-size: 11px; color: var(--pes-muted); }
-.exploration-composition ul { margin: 0 0 8px; }
+.exploration-ring strong { font-size: 17px; letter-spacing: -.045em; }
+.exploration-ring small { font-size: 10px; color: var(--pes-muted); }
+.exploration-composition ul { margin: 0; }
 .exploration-composition li {
   display: flex;
   justify-content: space-between;
-  gap: 8px;
-  padding: 6px 0;
-  font-size: 12px;
+  gap: 6px;
+  padding: 5px 0;
+  font-size: 11px;
 }
+.exploration-composition li strong { flex: none; font-variant-numeric: tabular-nums; }
+.exploration-composition li span { min-width: 0; overflow-wrap: anywhere; }
 .pes-site .exploration-composition p, .pes-site .exploration-note { font-size: 12px; }
 .pes-site .exploration-callout { margin-top: 10px; padding: 8px; background: #fce9ce; border-radius: 7px; color: #653e1f; }
 .pes-site .exploration-note { margin-bottom: 10px; }
-.exploration-table-section { margin-top: 20px; }
+.exploration-table-section { margin-top: 16px; }
 .exploration-table-scroll {
   overflow-x: auto;
   margin-top: 9px;

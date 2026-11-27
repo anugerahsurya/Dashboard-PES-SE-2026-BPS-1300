@@ -45,14 +45,16 @@ function FamilyComposition({ total }) {
   const unavailable = total.values['5'];
   return <aside className="exploration-composition">
     <h3>Komposisi keluarga Sumatera Barat</h3>
-    <div className="exploration-ring" style={{ background: total.total ? `conic-gradient(${fill})` : undefined }}>
-      <div><strong>{numbers.format(total.total)}</strong><small>Keluarga</small></div>
+    <div className="exploration-composition-body">
+      <div className="exploration-ring" style={{ background: total.total ? `conic-gradient(${fill})` : undefined }}>
+        <div><strong>{numbers.format(total.total)}</strong><small>Keluarga</small></div>
+      </div>
+      <ul>
+        {segments.map(([label, count, color]) => <li key={label}>
+          <span><i style={{ background: color }} />{label}</span><strong>{share(count, total.total)}</strong>
+        </li>)}
+      </ul>
     </div>
-    <ul>
-      {segments.map(([label, count, color]) => <li key={label}>
-        <span><i style={{ background: color }} />{label}</span><strong>{share(count, total.total)}</strong>
-      </li>)}
-    </ul>
     <p>Kelompok tidak eligible mencakup status 0, 3, 4, 5, dan 6.</p>
     {unavailable > 0 && <p className="exploration-callout"><strong>{numbers.format(unavailable)} keluarga</strong> berstatus tidak dapat ditemui sampai akhir pendataan.</p>}
   </aside>;
