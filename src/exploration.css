@@ -68,6 +68,7 @@
 }
 .exploration-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   max-width: 100%;
   padding: 4px;
@@ -95,21 +96,6 @@
   border-color: #ebd7bd;
   color: #743d1d;
   background: #fffaf2;
-}
-.exploration-source {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 640;
-}
-.exploration-source select {
-  min-height: 40px;
-  padding: 5px 26px 5px 9px;
-  color: var(--pes-ink);
-  border: 1px solid var(--pes-line);
-  border-radius: 8px;
-  background: #fff;
 }
 .exploration-figures { display: grid; gap: 14px; margin-top: 3px; }
 .exploration-figures.with-composition { grid-template-columns: minmax(0, 2.1fr) minmax(245px, 1fr); }
@@ -270,7 +256,7 @@
   .progress-stamp { display: block; }
   .progress-stamp > span { display: none; }
   .exploration-tabs button { padding-inline: 8px; font-size: 12px; }
-  .exploration-tabs button svg { width: 14px; }
+  .exploration-tabs button svg { display: none; }
   .exploration-chart, .exploration-composition { padding: 12px; }
   .exploration th, .exploration td { padding: 8px 10px; }
 }

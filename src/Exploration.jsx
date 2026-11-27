@@ -1,13 +1,20 @@
 import React, { useState } from 'react';
-import { ArrowDown, ArrowDownUp, ArrowUp, BarChart3, Building2, House, Store } from 'lucide-react';
-import { businessStatuses, familyStatuses, ubMetrics } from './exploration.js';
+import { ArrowDown, ArrowDownUp, ArrowUp, BarChart3, Building2, House, Store, Warehouse } from 'lucide-react';
+import { bkuStatuses, businessStatuses, familyStatuses, ubMetrics } from './exploration.js';
 import './exploration.css';
 
 const categories = [
   ['family', 'Keluarga', House],
   ['business', 'Usaha keluarga', Store],
+  ['bku', 'Usaha BKU', Warehouse],
   ['ub', 'UB', Building2],
 ];
+const views = {
+  family: ['family', familyStatuses],
+  business: ['household', businessStatuses],
+  bku: ['bang', bkuStatuses],
+  ub: ['ub', ubMetrics],
+};
 const numbers = new Intl.NumberFormat('id-ID');
 const percentages = new Intl.NumberFormat('id-ID', { style: 'percent', maximumFractionDigits: 2 });
 const ratio = (count, total) => total > 0 ? count / total : 0;
@@ -107,10 +114,9 @@ function CountsTable({ rows, total, entries, category }) {
 
 export default function Exploration({ data, dateLabel }) {
   const [category, setCategory] = useState('family');
-  const [businessSource, setBusinessSource] = useState('household');
-  const statusGroup = category === 'business' ? businessSource : category;
-  const entries = category === 'family' ? familyStatuses : category === 'business' ? businessStatuses :
-    ubMetrics.filter(([key]) => data.exploration?.[0]?.ub?.[key] !== undefined);
+  const [statusGroup, statuses] = views[category];
+  const available = data.exploration?.[0]?.[statusGroup];
+  const entries = statuses.filter(([key]) => available?.[key] !== undefined);
   const categoryLabel = categories.find(([key]) => key === category)[1];
   const rows = (data.exploration ?? []).flatMap(row => {
     const values = row[statusGroup];
@@ -134,21 +140,14 @@ export default function Exploration({ data, dateLabel }) {
           <Icon size={17} aria-hidden="true" />{label}
         </button>)}
       </div>
-      {category === 'business' && rows.length > 0 && <label className="exploration-source">
-        Sumber usaha
-        <select value={businessSource} onChange={event => setBusinessSource(event.target.value)}>
-          <option value="household">Nama KK</option>
-          <option value="bang">Bang=1</option>
-        </select>
-      </label>}
     </div>
     <div id="exploration-content">
       {rows.length ? <>
-        {category === 'ub' && <p className="exploration-note">Persentase dihitung dari total assignment UB. Satu assignment bisa tercatat pada lebih dari satu indikator.</p>}
-        <div className={category === 'family' ? 'exploration-figures with-composition' : 'exploration-figures'}>
+        {category === 'ub' && entries.length > 0 && <p className="exploration-note">Persentase aktif dihitung dari total assignment UB.</p>}
+        {entries.length > 0 && <div className={category === 'family' ? 'exploration-figures with-composition' : 'exploration-figures'}>
           <StatusChart rows={rows} entries={entries} independent={category === 'ub'} />
           {category === 'family' && <FamilyComposition total={total} />}
-        </div>
+        </div>}
         <CountsTable key={category} rows={rows} total={total} entries={entries} category={categoryLabel} />
       </> : <div className="exploration-empty">
         <div><BarChart3 size={24} aria-hidden="true" /></div>

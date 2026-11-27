@@ -24,7 +24,7 @@ Dashboard mencocokkan kabupaten/kota berdasarkan kode wilayah. KP yang belum fin
 
 Selama olah final masih berjalan, formulir menampilkan empat input. Setelah UB dan Non-UB mencapai 100% di setiap kabupaten/kota peserta, formulir hanya meminta CSV gabungan. Unggahan berikutnya memperbarui eksplorasi dan #KP dengan tanggal baru. Panel progres, delta H−1, dan unduhan PNG memakai pengambilan progres final.
 
-Tab Keluarga menampilkan komposisi dan kelompok pemutakhiran provinsi. Tab Usaha keluarga menyediakan pilihan sumber Nama KK dan Bang=1. Indikator UB ditampilkan sebagai proporsi dari total assignment. Kolom aktif tampil bila tersedia di CSV.
+Tab Keluarga menampilkan komposisi dan kelompok pemutakhiran provinsi. Usaha keluarga memakai kelompok Nama KK dan Usaha BKU memakai kelompok Bang=1. Status Non Respon BKU muncul jika CSV memuat kolom `Usaha (Bang=1) 9. Non Respon`. Tab UB memuat total assignment serta jumlah aktif jika tersedia di CSV.
 
 ## Riwayat laporan
 

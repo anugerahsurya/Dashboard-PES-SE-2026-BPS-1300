@@ -16,13 +16,12 @@ export const businessStatuses = [
   ['2', 'Baru', '#e58b3d'],
   ['3', 'Tutup', '#bd8612'],
   ['4', 'Ganda', '#3d789d'],
-  ['7', 'Data dari Kantor Pusat (KP)', '#785db0'],
 ];
+
+export const bkuStatuses = [...businessStatuses, ['9', 'Non Respon', '#785db0']];
 
 export const ubMetrics = [
   ['active', 'Keberadaan 1 (Aktif)', '#387760'],
-  ['kp', 'Ada #KP', '#785db0'],
-  ['unentered', 'Belum entri root', '#bd8612'],
 ];
 
 const ubHeaders = {
@@ -32,31 +31,33 @@ const ubHeaders = {
   unentered: 'ub belum entri root',
 };
 const kpStatusHeader = 'ub #kp per status';
+const businessCodes = businessStatuses.map(([code]) => code);
 const statusGroups = [
-  ['family', 'kk', familyStatuses],
-  ['bang', 'usaha (bang=1)', businessStatuses],
-  ['household', 'usaha (nama kk)', businessStatuses],
+  ['family', 'kk', familyStatuses.map(([code]) => code)],
+  ['bang', 'usaha (bang=1)', businessCodes, ['7', '9']],
+  ['household', 'usaha (nama kk)', businessCodes, ['7']],
 ];
 
 export function readExploration(header, records, codes) {
   const names = header.map(name => name.toLowerCase().replace(/\s+/g, ' '));
   const codeIndex = names.indexOf('kab/kot');
   if (codeIndex < 0) throw new Error('CSV eksplorasi memerlukan kolom Kab/Kot.');
-  const columns = statusGroups.map(([group, prefix, statuses]) => [
+  const columns = statusGroups.map(([group, prefix, required, optional = []]) => [
     group,
-    statuses.map(([code]) => {
+    [...required, ...optional].flatMap(code => {
       const indices = names.flatMap((name, i) => name.startsWith(prefix + ' ' + code + '.') ? [i] : []);
+      if (!indices.length && optional.includes(code)) return [];
       if (indices.length !== 1) throw new Error('CSV eksplorasi memerlukan satu kolom ' + prefix + ' ' + code + '.');
-      return [code, indices[0]];
+      return [[code, indices[0]]];
     }),
   ]);
   const ubColumns = Object.entries(ubHeaders).map(([key, name]) => [key, names.indexOf(name)]);
   const kpStatusIndex = names.indexOf(kpStatusHeader);
   if (ubColumns.some(([, index]) => index >= 0) || kpStatusIndex >= 0) {
-    if (ubColumns.some(([key, index]) => (index < 0 && key !== 'active') ||
+    if (ubColumns.some(([key, index]) => (index < 0 && (key === 'total' || key === 'kp')) ||
       (index >= 0 && names.lastIndexOf(names[index]) !== index)) ||
       (kpStatusIndex >= 0 && names.lastIndexOf(kpStatusHeader) !== kpStatusIndex)) {
-      throw new Error('CSV eksplorasi memerlukan kolom Total Assignment, Ada #KP, dan Belum Entri Root yang unik untuk UB.');
+      throw new Error('CSV eksplorasi memerlukan kolom Total Assignment dan Ada #KP yang unik untuk UB.');
     }
     columns.push(['ub', ubColumns.filter(([, index]) => index >= 0)]);
   }
@@ -109,10 +110,12 @@ export function validExploration(rows, codes) {
   if (!Array.isArray(rows) || rows.length !== codes.length) return false;
   const remaining = new Set(codes);
   const withUb = rows[0]?.ub !== undefined;
-  const groups = statusGroups.map(([group, , statuses]) => [group, statuses.map(([code]) => code)]);
-  const withActive = withUb && rows[0].ub?.active !== undefined;
+  const groups = statusGroups.map(([group, , required, optional = []]) => [
+    group,
+    [...required, ...optional.filter(code => rows[0]?.[group]?.[code] !== undefined)],
+  ]);
   const withBreakdown = withUb && rows[0].ub?.kpByStatus !== undefined;
-  const ubKeys = Object.keys(ubHeaders).filter(key => key !== 'active' || withActive);
+  const ubKeys = Object.keys(ubHeaders).filter(key => key === 'total' || key === 'kp' || rows[0]?.ub?.[key] !== undefined);
   if (withUb) groups.push(['ub', ubKeys]);
   const statuses = new Set(Object.values(assignmentColumns));
   const validBreakdown = (counts, total) => counts && typeof counts === 'object' && !Array.isArray(counts) &&
