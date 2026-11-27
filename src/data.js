@@ -1,4 +1,5 @@
 import { reportingDeadline } from './progress.js';
+import { readExploration } from './exploration.js';
 
 // Urutan, target tetap, jumlah petugas, dan tenggat dasar mengikuti lembar "14_11 14.00".
 // Kode wilayah adalah kunci penggabungan ketiga ekspor.
@@ -13,6 +14,7 @@ const regions = [
   ['1375', 'Kota Bukittinggi', 26, 24, 16, 3, 27],
   ['1376', 'Kota Payakumbuh', 25, 24, 13, 3, 25],
 ]
+export const progressRegionCodes = regions.map(([code]) => code)
 
 const slsColumns = { belum: 'belum', sedang: 'sedang', selesai: 'selesai' }
 const assignmentColumns = {
@@ -27,6 +29,7 @@ const assignmentColumns = {
   'rejected by admin kabupaten': 'rejectedByAdmin',
   'revoked by pengawas': 'revoked',
 }
+const finalStatuses = ['completed', 'completedByAdmin', 'editedByAdmin', 'approved']
 
 function readRows(source, label) {
   const text = String(source ?? '').replace(/^\uFEFF/, '').trim()
@@ -104,13 +107,14 @@ function readCounts(source, isSls, label) {
   return counts
 }
 
-function readKp(source) {
+function readKp(source, { requireStatus = false, allowPartial = false } = {}) {
   const [header, ...rows] = readRows(source, '#KP')
   if (!header || !rows.length) throw new Error('#KP: CSV kosong.')
   const names = header.map(value => value.toLowerCase().replace(/\s+/g, ' '))
   const codeIndex = names.indexOf('wilayah')
   const kpIndex = names.indexOf('total_assg_ada_kp')
   const statusIndex = names.indexOf('assignment_status_alias')
+  if (requireStatus && statusIndex < 0) throw new Error('Rincian #KP harus memuat kolom assignment_status_alias.')
   if (codeIndex < 0 || kpIndex < 0 || new Set(names).size !== names.length) {
     throw new Error('#KP: perlu kolom Wilayah dan TOTAL_ASSG_ADA_KP yang unik.')
   }
@@ -129,7 +133,7 @@ function readKp(source) {
     if (statuses.has(status)) throw new Error('#KP ' + code + ': status duplikat: ' + label)
     statuses.set(status, value)
   }
-  if (result.size !== regions.length) throw new Error('#KP: sembilan wilayah harus tersedia.')
+  if (!allowPartial && result.size !== regions.length) throw new Error('#KP: sembilan wilayah harus tersedia.')
   return result
 }
 
@@ -146,13 +150,43 @@ function assignment(status, officers) {
   return { ...status, target, officers, ppl: pml + status.submitted, pml, final }
 }
 
-export function buildSnapshot({ sls, nonUb, ub, kp }, date, time) {
+function inferKp(code, status, total) {
+  const finalCapacity = finalStatuses.reduce((sum, key) => sum + status[key], 0)
+  const capacities = [
+    ['final', finalCapacity],
+    ...Object.entries(status).filter(([key]) => !finalStatuses.includes(key)),
+  ]
+  const target = sumNumbers(capacities.map(([, count]) => count))
+  const inferred = new Map()
+  for (const [key, capacity] of capacities) {
+    const min = Math.max(0, total - (target - capacity))
+    const max = Math.min(total, capacity)
+    if (min !== max) {
+      throw new Error('#KP ' + code + ': unggah rincian KP per status assignment. Total pada CSV gabungan masih bisa berasal dari beberapa status UB.')
+    }
+    if (key !== 'final') inferred.set(key, min)
+    else inferred.set('alreadyFinal', min)
+  }
+  return inferred
+}
+
+export function buildSnapshot({ sls, nonUb, ub, kp, kpDetail }, date, time) {
   const stamp = new Date(date + 'T00:00:00Z')
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(stamp.getTime()) || stamp.toISOString().slice(0, 10) !== date) {
     throw new Error('Tanggal laporan tidak valid.')
   }
   if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) throw new Error('Jam laporan harus dalam format HH:mm WIB.')
-  const kpCounts=readKp(kp);
+  const monitoring = readRows(kp, 'CSV eksplorasi / #KP')
+  const exploration = monitoring[0]?.some(name => name.toLowerCase() === 'kab/kot')
+    ? readExploration(monitoring[0], monitoring.slice(1), progressRegionCodes)
+    : null
+  const hasUbMonitoring = exploration?.get(progressRegionCodes[0]).ub !== undefined
+  const kpCounts = exploration
+    ? (kpDetail ? readKp(kpDetail, { requireStatus: true, allowPartial: hasUbMonitoring }) : null)
+    : readKp(kp)
+  if (exploration && !hasUbMonitoring && !kpCounts) {
+    throw new Error('CSV eksplorasi ini belum memuat total #KP UB. Unggah juga rincian KP per status assignment.')
+  }
   const slsCounts = readCounts(sls, true, 'SLS')
   const nonUbCounts = readCounts(nonUb, false, 'PES SE2026')
   const ubCounts = readCounts(ub, false, 'PES SE2026 UB')
@@ -163,11 +197,18 @@ export function buildSnapshot({ sls, nonUb, ub, kp }, date, time) {
   const rows = regions.map(([code, name, slsTarget, ubTarget, nonUbOfficers, ubOfficers, day]) => {
     const counts = slsCounts.get(code)
     const ubStatus = { ...ubCounts.get(code) }
-    const kpByStatus = kpCounts.get(code)
-    const finalStatuses = ['completed', 'completedByAdmin', 'editedByAdmin', 'approved']
-    let kpAlreadyFinal = 0
+    const ubMonitoring = exploration?.get(code).ub
+    if (ubMonitoring && ubMonitoring.total !== sumNumbers(Object.values(ubStatus))) {
+      throw new Error('UB ' + name + ': total assignment pada CSV eksplorasi berbeda dari CSV progres UB.')
+    }
+    const kpByStatus = kpCounts?.get(code) ?? inferKp(code, ubStatus, ubMonitoring.kp)
+    if (ubMonitoring && ubMonitoring.kp !== sumNumbers([...kpByStatus.values()])) {
+      throw new Error('#KP ' + name + ': total rincian berbeda dari CSV eksplorasi. Periksa waktu ekspor.')
+    }
+    let kpAlreadyFinal = kpByStatus.get('alreadyFinal') ?? 0
     let moved = 0
     for (const [status, count] of kpByStatus) {
+      if (status === 'alreadyFinal') continue
       if (count > ubStatus[status]) {
         throw new Error('#KP ' + name + ': KP melebihi jumlah status ' + status + ' pada CSV UB. Periksa waktu ekspor kedua berkas.')
       }
@@ -202,5 +243,8 @@ export function buildSnapshot({ sls, nonUb, ub, kp }, date, time) {
       totals[group][key] = sumNumbers(rows.map(row => row[group][key]))
     }
   }
-  return { date, time, rows, totals }
+  return {
+    date, time, rows, totals,
+    ...(exploration && { exploration: regions.map(([code]) => exploration.get(code)) }),
+  }
 }

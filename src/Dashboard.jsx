@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowDownToLine, ArrowUpFromLine, Building2, CalendarDays, ChevronDown, Clock3, Layers3, LoaderCircle, MapPin, Medal, Pause, Play, Search, Store } from 'lucide-react';
+import { ArrowDownToLine, ArrowUpFromLine, Building2, ChevronDown, Layers3, LoaderCircle, MapPin, Medal, Pause, Play, Search, Store } from 'lucide-react';
 import Pace from './Pace';
+import Exploration from './Exploration.jsx';
+import { progressRegionCodes } from './data.js';
 import {achievement,isFinalComplete,stageNotes,progressValue,targetDeadlines} from './progress.js';
 import { deltaLabel, previousDate } from './comparison.js';
 import landscapeUrl from './landscape.svg';
@@ -161,19 +163,39 @@ function Recap({data,previous,note}) {
 
 export default function Dashboard({data,onUpload,onExport,exporting,previous=null,comparisonStatus='missing',ready=true,onRetryComparison}) {
   const [paused,setPaused]=useState(false);
+  const [progressChoice,setProgressChoice]=useState(null);
   const {totals,rows}=data;
+  const finished = new Set(rows.filter(isFinalComplete).map(row => row.code));
+  const complete = ready && rows.length === progressRegionCodes.length &&
+    progressRegionCodes.every(code => finished.has(code));
+  const progressOpen = progressChoice?.snapshot === data ? progressChoice.open : !complete;
   const baseline = comparisonStatus==='ready' ? previous : null;
   const note = comparisonNote(data.date,comparisonStatus)+(baseline ? ' Acuan pengambilan terakhir: '+baseline.time+' WIB.' : '');
   const finalChange = group => baseline ? deltaLabel(totals[group],baseline.totals[group],'final',group) : '—';
   return <div className={ready?"pes-site is-ready":"pes-site is-loading"}><header className="site-header"><div className="header-inner"><a href="#ringkasan" className="brand" aria-label="PES Monitor, Ringkasan"><img className="brand-symbol" src="/pes-monitor.svg" alt=""/><strong>PES <span>Monitor</span></strong></a><span className="institution">BPS Provinsi Sumatera Barat</span><button type="button" onClick={onUpload} className="btn btn-upload"><ArrowUpFromLine size={16}/>Unggah CSV</button></div></header>
     <main className="pes-main" id="ringkasan">
-      <section className={paused ? "hero paused" : "hero"}><img className="landscape" src={landscapeUrl} alt=""/><Weather/><button className="motion-toggle" type="button" onClick={()=>setPaused(!paused)} aria-label={paused?"Putar animasi ilustrasi":"Jeda animasi ilustrasi"}>{paused?<Play size={14}/>:<Pause size={14}/>}</button><div className="hero-copy"><div className="hero-location"><MapPin size={14}/>SUMATERA BARAT</div><h1>Dashboard Progres<br/><span>PES SE2026</span></h1><div className="hero-time"><CalendarDays size={15}/><span>{dateLabel(data.date)}</span><i/><Clock3 size={15}/><span>{data.time.replace(':','.')} WIB</span></div></div></section>
+      <section className={paused ? "hero exploration-hero paused" : "hero exploration-hero"}><img className="landscape" src={landscapeUrl} alt=""/><Weather/><button className="motion-toggle" type="button" onClick={()=>setPaused(!paused)} aria-label={paused?"Putar animasi ilustrasi":"Jeda animasi ilustrasi"}>{paused?<Play size={14}/>:<Pause size={14}/>}</button><div className="hero-copy"><div className="hero-location"><MapPin size={14}/>SUMATERA BARAT</div><h1>Eksplorasi <span>PES SE2026</span></h1><a className="hero-results-link" href="#eksplorasi">Lihat hasil pendataan <ChevronDown size={15} aria-hidden="true"/></a></div></section>
+      <section className="progress-disclosure" aria-label="Progres pendataan">
+        <button type="button" className="progress-trigger" aria-expanded={progressOpen} aria-controls="progress-content"
+          onClick={() => setProgressChoice({ snapshot: data, open: !progressOpen })}>
+          <span className={'progress-trigger-icon' + (complete ? ' complete' : '')}>{complete ? <Medal size={21} /> : <Layers3 size={21} />}</span>
+          <span className="progress-trigger-copy">
+            <strong>Progres pendataan</strong>
+            <small>{finished.size} dari {rows.length} kabupaten/kota selesai <span className="progress-stamp"><span aria-hidden="true">· </span>{dateLabel(data.date)} · {data.time.replace(':', '.')} WIB</span></small>
+          </span>
+          <span className="progress-trigger-action">{progressOpen ? 'Tutup progres' : 'Lihat progres'}</span>
+          <ChevronDown size={18} className="progress-chevron" aria-hidden="true"/>
+        </button>
+      </section>
+      <div id="progress-content" hidden={!progressOpen}>
       <div className="summary-heading"><div><h2>Ringkasan progres</h2><p>Capaian pendataan di {integer.format(rows.length)} kabupaten/kota</p></div><button type="button" className="btn btn-export" onClick={onExport} disabled={exporting||comparisonStatus==='loading'}>{exporting?<LoaderCircle aria-hidden="true" className="pes-spin" size={16}/>:<ArrowDownToLine aria-hidden="true" size={16}/>} {exporting?'Menyiapkan PNG…':'Unduh PNG'}</button></div>
       <div className="metric-grid"><Metric icon={Layers3} title="Pendataan SLS" description="SLS selesai" complete={totals.sls.selesai} target={totals.sls.target} tone="orange"/><Metric icon={Store} title="Usaha Non UB" description="Selesai olah final" complete={totals.nonUb.final} target={totals.nonUb.target} tone="teal" group="nonUb" delta={finalChange('nonUb')}/><Metric icon={Building2} title="Usaha Besar (UB)" description="Selesai olah final" complete={totals.ub.final} target={totals.ub.target} tone="violet" group="ub" delta={finalChange('ub')}/></div>
       <p className="comparison-note" role="status">{note} {comparisonStatus==='error'&&<button type="button" className="comparison-retry" onClick={onRetryComparison}>Coba lagi</button>}</p>
       <div className="chart-grid" key={ready?"charts-ready":"charts-loading"}><DistrictChart rows={rows}/><Distribution sls={totals.sls}/></div>
       <Pace snapshot={data}/>
       <Recap data={data} previous={baseline} note={note}/>
+      </div>
+      <Exploration data={data} dateLabel={dateLabel}/>
     </main><footer className="pes-footer"><span><img src="/pes-monitor.svg" alt="" width="23" height="23"/> PES Monitor</span><span>Dikelola oleh Tim IT BPS Provinsi Sumatera Barat</span></footer>
   </div>;
 }

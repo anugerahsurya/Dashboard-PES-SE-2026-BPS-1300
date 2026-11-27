@@ -18,9 +18,12 @@ API Vercel menerima rekap agregat hasil pengolahan CSV. API memvalidasi kunci ad
 | SLS | Kode wilayah, BELUM, SEDANG, dan SELESAI |
 | PES SE2026 Non-UB | Ringkasan status assignment Non-UB |
 | PES SE2026 UB | Ringkasan status assignment UB |
-| Keterangan KP | Wilayah, status assignment dan TOTAL_ASSG_ADA_KP |
+| CSV eksplorasi / #KP | Ekspor SQL Lab dengan Kab/Kot, status KK, Usaha (Bang=1), Usaha (Nama KK), dan indikator UB. Slot ini juga menerima CSV Keterangan KP lama |
+| Rincian #KP per status | Wilayah, assignment_status_alias, dan TOTAL_ASSG_ADA_KP. Tambahkan jika total #KP pada CSV eksplorasi belum cukup untuk menentukan status asal berdasarkan CSV progres UB |
 
 Dashboard mencocokkan kabupaten/kota berdasarkan kode wilayah. KP yang belum final dipindahkan dari status asal ke PPL, PML, dan olah final. KP yang sudah final dihitung sekali. EDITED dan COMPLETED BY Admin Kabupaten masuk PPL, PML, dan olah final. APPROVED juga masuk olah final.
+
+CSV eksplorasi tersimpan bersama snapshot progres. Tab Keluarga menampilkan komposisi status dan kelompok pemutakhiran provinsi. Tab Usaha keluarga menyediakan pilihan sumber Nama KK dan Bang=1. Tab UB menampilkan aktif, ada #KP, dan belum entri root sebagai proporsi dari total assignment. Indikator tersebut dapat tumpang tindih.
 
 ## Riwayat laporan
 

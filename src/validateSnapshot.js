@@ -1,3 +1,6 @@
+import { validExploration } from './exploration.js';
+import { progressRegionCodes } from './data.js';
+
 export function validDate(date) {
   if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
   const d = new Date(date + 'T00:00:00Z');
@@ -44,13 +47,18 @@ function validGroup(group, category) {
 
 export function validSnapshot(s) {
   if (!s || !validDate(s.date) || typeof s.time !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(s.time)) return false;
-  const expected = new Set(['1303', '1306', '1307', '1309', '1312', '1371', '1372', '1375', '1376']);
+  const expected = new Set(progressRegionCodes);
   if (!Array.isArray(s.rows) || s.rows.length !== expected.size || !s.totals) return false;
+  if (s.exploration !== undefined && !validExploration(s.exploration, [...expected])) return false;
   const categories = Object.keys(STATUS_FIELDS);
   for (const row of s.rows) {
     if (!row || !expected.delete(row.code) || typeof row.name !== 'string' || !row.name.trim() || !validDate(row.deadline)) return false;
     if (!categories.every(category => validGroup(row[category], category))) return false;
   }
+  if (s.exploration?.some(({ code, ub }) => {
+    const progress = s.rows.find(row => row.code === code).ub;
+    return ub && (ub.total !== progress.target || ub.kp !== (progress.kp ?? 0));
+  })) return false;
   return categories.every(category => {
     const total = s.totals[category];
     if (!validGroup(total, category)) return false;

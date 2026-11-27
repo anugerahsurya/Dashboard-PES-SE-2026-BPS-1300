@@ -15,7 +15,7 @@ import {reportingDeadline} from './progress.js';
 import './app.css';
 
 const endpoint='/api/snapshots';
-const types=[['sls','Progres SLS'],['nonUb','PES SE2026 - Non-UB'],['ub','PES SE2026 - UB'],['kp','#KP - Rincian assignment UB']];
+const types=[['sls','Progres SLS'],['nonUb','PES SE2026 - Non-UB'],['ub','PES SE2026 - UB'],['kp','CSV eksplorasi / #KP']];
 const fmt=n=>Number(n).toLocaleString('id-ID');
 function check(x){
   if(!x || !/^\d{4}-\d{2}-\d{2}$/.test(x.date) || !/^\d{2}:\d{2}$/.test(x.time) || !Array.isArray(x.rows)||!x.rows.length || ![x.totals,...x.rows].every(r=>['sls','nonUb','ub'].every(k=>Number.isFinite(r?.[k]?.target)))) throw new Error('Format data tersimpan tidak sesuai.');
@@ -61,20 +61,23 @@ function UploadDialog({close,apply}){
     try{if(draft){await apply(draft,key);close();}else{
       if(types.some(([k])=>!files[k]))throw new Error('Pilih keempat file CSV sebelum memeriksa data.');
       const inputs=Object.fromEntries(await Promise.all(types.map(async ([k])=>[k,await files[k].text()])));
+      if(files.kpDetail)inputs.kpDetail=await files.kpDetail.text();
       setDraft(buildSnapshot(inputs,date,time));
     }}catch(err){setError(err.message);}finally{setBusy(false);}
   }
   return <dialog className="import-dialog" aria-labelledby="import-title" ref={ref} onCancel={e=>{if(e.target===ref.current){e.preventDefault();if(!busy)close();}}}>
     <header><span className="import-icon"><Upload size={21}/></span><button type="button" className="icon-close" disabled={busy} onClick={close} aria-label="Tutup"><X size={20}/></button></header>
     <h2 id="import-title">{draft?'Periksa hasil impor':'Perbarui progres'}</h2>
-    <p>{draft?'Pastikan target tiap sumber dan waktu laporan sudah sesuai.':'Pilih empat ekspor CSV untuk satu waktu pelaporan.'}</p>
+    <p>{draft?'Pastikan target tiap sumber dan waktu laporan sudah sesuai.':'Pilih progres SLS, Non-UB, UB, dan CSV eksplorasi gabungan atau rincian #KP.'}</p>
     <form onSubmit={submit}>
     {draft?<><p className="import-date">{draft.date} - {draft.time} WIB - {draft.rows.length} wilayah</p>
-    <div className="import-review">{types.map(([k,label])=><div key={k}><span>{label}</span><strong>{k==='kp'?fmt(draft.totals.ub.kp)+' assignment KP':fmt(draft.totals[k].target)+' target'}</strong></div>)}</div>
+    <div className="import-review">{types.map(([k,label])=><div key={k}><span>{label}</span><strong>{k==='kp'?fmt(draft.totals.ub.kp)+' assignment KP':fmt(draft.totals[k].target)+' target'}</strong></div>)}
+    {draft.exploration&&<div><span>Eksplorasi hasil</span><strong>{draft.exploration.length} kabupaten/kota</strong></div>}</div>
     <label className="import-field">Kunci admin<input required type="password" value={key} onChange={e=>setKey(e.target.value)} autoComplete="off"/></label>
     <small>Rekap progres akan tersimpan di Supabase.</small></>:<>
     <div className="import-fields"><label className="import-field">Tanggal laporan<input required type="date" value={date} onChange={e=>setDate(e.target.value)}/></label><label className="import-field">Pukul (WIB)<input required type="time" value={time} onChange={e=>setTime(e.target.value)}/></label></div>
-    {types.map(([k,label])=><label className="file-slot" key={k}><FileSpreadsheet size={22}/><span><b>{label}</b><small>{files[k]?.name||'Pilih file .csv'}</small></span>{files[k]&&<Check size={18}/>}<input aria-label={label} required={!files[k]} type="file" accept=".csv,text/csv" onChange={e=>setFiles({...files,[k]:e.target.files[0]})}/></label>)}</>}
+    {types.map(([k,label])=><label className="file-slot" key={k}><FileSpreadsheet size={22}/><span><b>{label}</b><small>{files[k]?.name||'Pilih file .csv'}</small></span>{files[k]&&<Check size={18}/>}<input aria-label={label} type="file" accept=".csv,text/csv" onChange={e=>setFiles({...files,[k]:e.target.files[0]})}/></label>)}
+    {files.kp&&<label className="file-slot"><FileSpreadsheet size={22}/><span><b>Rincian #KP per status</b><small>{files.kpDetail?.name||'Bila CSV gabungan memerlukan rincian'}</small></span>{files.kpDetail&&<Check size={18}/>}<input aria-label="Rincian #KP per status" type="file" accept=".csv,text/csv" onChange={e=>setFiles({...files,kpDetail:e.target.files[0]})}/></label>}</>}
     {error&&<p role="alert" className="import-error">{error}</p>}
     <footer>{draft&&<button type="button" disabled={busy} onClick={()=>{setDraft(null);setError('');}}><ArrowLeft size={16}/> Ubah</button>}<button className="primary-import" disabled={busy}>{busy&&<LoaderCircle className="import-spin" size={17}/>} {draft?'Simpan progres':'Periksa data'}</button></footer>
     </form></dialog>
