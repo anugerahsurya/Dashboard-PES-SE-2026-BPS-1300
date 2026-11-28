@@ -41,7 +41,7 @@ export function progressValue(group, stage) {
 
 export function targetRatio(date, deadline, stage) {
   const day = value => (Date.parse(value + 'T00:00:00Z') - Date.UTC(2026,10,1)) / 86400000 + 1;
-  return (day(date) - (stage === 'ppl' ? 0 : 1)) / day(deadline);
+  return Math.min(1, (day(date) - (stage === 'ppl' ? 0 : 1)) / day(deadline));
 }
 
 export function achievement(rows, category, stage, date) {
